@@ -61,35 +61,53 @@ float randomRanged(float a, float b) {
 	float r = random * diff;
 	return a + r;
 }
-void makeObjects(std::vector<int> list){
-	float positionX = 0.0f;
-	float boxWidth =  width/list.size()/2.0f;
+void makeObjects(std::vector<int> list, float height){
+	float positionX = -.5f;
+	float positionY = -.45f;
+	float boxWidth =  1.0f/list.size()/2.0f;
 	float margin = boxWidth/2.0f;
+	float scale = height/7.0f; //1  over the max
 	for(int i = 0; i < list.size(); i++){
-		positionX = positionX + boxWidth + margin;
+		float x = positionX + margin + boxWidth*i;
+		std::vector<glm::vec3> line;
+		line.push_back(glm::vec3(x, positionY, 0.0f));
+		line.push_back(glm::vec3(x, positionY + list.at(i)*scale, 0.0f));
+		Mesh* box = new Mesh(line);
+		box->calculateNormals();
+		box->createGLBuffer(false, vao, vaoIndex++);
+		box->setupShader(program1, globalCamera);
+		objects.push_back(box);
 		//translate object so that top size is at x axis, scale y, translte back up
-		
-
 	}
-
 }
 
 void init()
 {
+	//Load shaders and use the resulting shader program
+	program1 = Angel::InitShader("vshader.glsl", "fshader.glsl");
+	program2 = Angel::InitShader("vshader.glsl", "fshader.glsl");
+	//globalCamera = glm::perspective(35.0f, 1.0f, 0.01f, 200.0f); 
+	globalCamera =glm::ortho (-.5f, .5f, -.5f, .5f, -100.0f, 100.0f);
+	glGenVertexArrays(50, vao);
+	
 	//Questions: Should length of array be limited?
-
 	std::vector<int> unsorted;
 	unsorted.push_back(1);
 	unsorted.push_back(2);
 	unsorted.push_back(7);
 	unsorted.push_back(3);
 
-	//Load shaders and use the resulting shader program
-	program1 = Angel::InitShader("vshader.glsl", "fshader.glsl");
-	program2 = Angel::InitShader("vshader.glsl", "fshader.glsl");
-	glGenVertexArrays(50, vao);
+	makeObjects(unsorted, .75f);
 
-	globalCamera = glm::perspective(35.0f, 1.0f, 0.01f, 200.0f); 
+	std::sort(unsorted.begin(), unsorted.end());
+	//test deletion
+	//objects.clear();
+	//makeObjects(unsorted, .75f);
+
+	//TODO: calculate new positions, translate there. Don't recreate objects.
+
+
+	/*
 	//Create mesh objects with different shader programs.
 	Mesh* figure = new Mesh("woman.coor", "woman.poly");
 	figure->calculateNormals();
@@ -98,8 +116,10 @@ void init()
 	figure->absoluteTranslate(-figure->getCenter());
 	figure->scaleCenter(1/figure->getSize().y);
 	objects.push_back(figure);
+	*/
 	
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glLineWidth(4.0f);
 	glClearColor(1.0, 1.0, 1.0, 1.0);
 }
 
@@ -351,7 +371,7 @@ int main(int argc, char **argv)
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH);
 	glutInitWindowSize(800, HEIGHT);
-	glutCreateWindow("Lab 7");
+	glutCreateWindow("160 Project Prototype");
 	glutDisplayFunc(display);
 	glutMouseFunc(mouseSelect);
 	//glutCreateMenu(NULL);

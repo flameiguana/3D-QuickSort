@@ -129,8 +129,10 @@ public:
 	    	0, 4, 1, 5, 2, 6, 3, 7
 		};
 
+		/*
 		std::cout << min.x << " " << min.y << " " << min.z << " " << std::endl;
 		std::cout << max.x << " " << max.y << " " << max.z << " " << std::endl;
+		*/
 		//Generate the buffers
 		glGenBuffers(1, &vboVertices);
 		glBindBuffer(GL_ARRAY_BUFFER, vboVertices);
@@ -491,7 +493,7 @@ void Mesh::setupShader(GLuint& _program, glm::mat4 projection){
 
 	//Viewing
 	//glm::vec4 eye(1.0, 0.0, 0.8, 1.0);
-	glm::vec3 eye(0.0, 0.0, 1.01);
+	glm::vec3 eye(0.0, 0.0, 1.0);
 	glm::vec3 at(0.0, 0.0, 0.0); //Look at origin
 	glm::vec3 up(0.0, 1.0, 0.0); //Determines which axis is "up" for the camera.
 	mView = glm::lookAt(eye, at, up);
@@ -532,7 +534,7 @@ void Mesh::draw(){
 	glVertexAttribPointer(vNormal, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(sizeofVertices));
 	glEnableVertexAttribArray(vNormal);
 
-	glDrawArrays(GL_TRIANGLES, 0 , rawVerts.size());
+	glDrawArrays(GL_LINES, 0 , rawVerts.size());
 
     glDisableVertexAttribArray(vPosition);
     glDisableVertexAttribArray(vNormal);
@@ -659,12 +661,15 @@ void Mesh::setLighting(LightingType lighting, bool specular){
 			subroutines[0] = colorKeyIndex;
 			break;
 	}
-
 	if(specular)
 		subroutines[1] = specularOn;
 	else 
 		subroutines[1] = specularOff;
 }
 
-//Still need to do memory management.
-Mesh::~Mesh(){}
+
+Mesh::~Mesh(){
+	//TODO, delete pointers
+	glDeleteVertexArrays(1, vao);
+	glDeleteBuffers(1, &vertexBuffer);
+}
