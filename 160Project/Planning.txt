@@ -1,0 +1,41 @@
+Key Points to Illustrate:
+Sort is being done recursively and in place. It is a divide and conquer algorithmn.
+
+
+Quicksort(A, left, right)
+	if(left < right)
+		pivot = partition(A, left, right)
+		Quicksort(A, left, pivot - 1)
+		Quicksort(A, pivot + 1, right)
+
+//Makes sure that everything left of pivot is lower value than pivot.
+//Everything to the right is higher.
+
+:Optionally randomize right, point pg 179
+Partition(A, left, right)
+	x = A.at(right)
+	i = left
+	for j = left to right - 1
+		if A.at(j) <= x
+			swap A.at(i) with A.at(j)
+			i++
+	swap A.at(i) with A.at(right)
+	return i;
+i and j signify currently comparing values
+
+
+How to carry out animations
+Whenever quicksort is called, clone array and push down.
+When it finishes, push back up, destroying previous one.
+
+When doing partition, signify comparisons somehow (mapping texture to top face of comparing?)
+Swaps are shown by translations.
+
+
+Implementation To Do:
+1. Position and scale elements.
+
+Remarks:
+Each object doesn't need its own shader. Even for picking, you can just pass in color id in draw loop.
+Each object /really/ doesn't need its own camera. Note that having only one camera would save memory and 
+a few lines of code, but not really calculations.

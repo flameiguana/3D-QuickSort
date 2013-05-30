@@ -248,9 +248,9 @@ Mesh::Mesh(const std::string &coords, const std::string &polys){
 		else if(z < minCoords.z)
 			minCoords.z = z;
 	}
-	size = glm::vec3(maxCoords.x - minCoords.x, maxCoords.y - minCoords.y, maxCoords.z - minCoords.z);
+	size = glm::vec4(maxCoords.x - minCoords.x, maxCoords.y - minCoords.y, maxCoords.z - minCoords.z, 1.0f);
 	center = glm::vec3((minCoords.x + maxCoords.x)/2.0f, (minCoords.y + maxCoords.y)/2.0f, (minCoords.z + maxCoords.z)/2.0f);
-	std::cout << "Center of figure "<< center.x << " " << center.y << " " << center.z << std::endl;
+	//std::cout << "Center of figure "<< center.x << " " << center.y << " " << center.z << std::endl;
 	currentCenter = center;
 	file.close();
 	//Load the polygons
@@ -313,9 +313,11 @@ Mesh::Mesh(const std::string &coords, const std::string &polys){
 		polygons.push_back(poly);
 		splitLine.clear();
 	}
+	/*
 	std::cout << "Polygon Count " << polygons.size() << std::endl;
 	std::cout << "Surface Normal Count " << surfaceNormals.size() << std::endl; //17832
 	std::cout << "Point Count " << rawVerts.size() << std::endl; //17832
+	*/
 	file.close();
 }
 
@@ -405,7 +407,7 @@ void Mesh::createGLBuffer(bool smooth, GLuint* vao, int index){
 	this->vao = vao;
 	glBindVertexArray(vao[index]);
 
-	boundingBox = new BBox(minCoords, maxCoords, center, size);
+	boundingBox = new BBox(minCoords, maxCoords, center, glm::vec3(size));
 
 	sizeofVertices = rawVerts.size()*sizeof(glm::vec3);
 	sizeofNormals = surfaceNormals.size()*sizeof(glm::vec3);
@@ -566,10 +568,16 @@ void Mesh::absoluteTranslate(glm::vec3& offset){
 	glm::mat4 translation(1.0f);
 	//offset identity matrix
 	translation = glm::translate(translation, offset);
-	//the accumulated tranlsation
+	//the accumulated translation
 	mTranslation = translation * mTranslation;
 	//dont accumulate translation, just use latest
 	mTransformation = translation * mTransformation;
+}
+
+void Mesh::moveTo(glm::vec3& point){
+	//translate to center, then translate to point.
+	mTranslation = glm::translate(glm::mat4(1.0f), point);
+	mTransformation = mTranslation * mRotation * mScale *  glm::translate(glm::mat4(1.0f), -center);
 }
 
 void Mesh::rotate(glm::vec3& rotations, bool positive){
@@ -614,6 +622,7 @@ void Mesh::scale(float scaling){
 	scale = glm::scale(scale, glm::vec3(scaling, scaling, scaling));
 	mTransformation = scale * mTransformation;
 	mScale = scale * mScale;
+	size = mScale * size;
 }
 
 void Mesh::zoom(float zoomFactor){
@@ -623,20 +632,30 @@ void Mesh::zoom(float zoomFactor){
 	mScaleProjection = scale * mScaleProjection;
 }
 
-void Mesh::moveCamera(glm::vec3 offset){
+void Mesh::moveCamera(glm::vec3& offset){
 	glm::mat4 translation(1.0f);
 	translation = glm::translate(translation, offset );
 	mView = translation * mView;
 	mTransView = translation * mTransView;
 }
 
-void Mesh::scaleCenter(float scaling){
+void Mesh::scaleCenterUniform(float scaling){
 	glm::mat4 scale(1.0f);
 	scale = glm::scale(scale, glm::vec3(scaling, scaling, scaling));
 	mTransformation = mTranslation * glm::translate(glm::mat4(1.0f), center) * mRotation * scale * mScale * glm::translate(glm::mat4(1.0f), -center);
 	mScale = scale * mScale;
 }
 
+void Mesh::anchorBottom(){
+	center = glm::vec3(minCoords.x, minCoords.y, center.z);
+}
+void Mesh::scaleCenter(glm::vec3& scaleFactor){
+	glm::mat4 scale(1.0f);
+	scale = glm::scale(scale, scaleFactor);
+	mTransformation = mTranslation * glm::translate(glm::mat4(1.0f), center) * mRotation * scale * mScale * glm::translate(glm::mat4(1.0f), -center);
+	mScale = scale * mScale;
+	size = mScale * size;
+}
 glm::vec3 Mesh::windowToWorld(glm::vec3 winCoord, glm::vec4 viewPort){
 	return glm::unProject(winCoord, mView, mProjection, viewPort);
 }

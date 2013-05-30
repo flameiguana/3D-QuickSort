@@ -55,19 +55,22 @@ public:
 	void translateBack();
 
 	void absoluteTranslate(glm::vec3& position);
+	void moveTo(glm::vec3& point);
 	void rotate(glm::vec3& rotations, bool positive = true);
 	void scale(float scaling);
 	void zoom(float zoomFactor);
-	void moveCamera(glm::vec3 offset);
-
-	void scaleCenter(float scaling);
+	void moveCamera(glm::vec3& offset);
+	//too specific of a function, but itll do. 
+	void anchorBottom();
+	void scaleCenterUniform(float scaling);
+	void scaleCenter(glm::vec3& scaleFactor);
 	glm::vec3 windowToWorld(glm::vec3 winCoord, glm::vec4 viewPort);
 	void drawBoundingBox(){drawBox = true;}
 	void removeBoundingBox(){drawBox = false;}
 
 	bool colorMatch(unsigned char *color);
 	void setupShader(GLuint& program, glm::mat4 projection);
-	glm::vec3 getSize(){return size;}
+	glm::vec4 getSize(){return size;}
 	glm::vec3 getCenter(){return center;}
 	void draw();
 	~Mesh();
@@ -105,7 +108,7 @@ private:
 	glm::mat4 mScale, mScaleProjection;
 	glm::vec3 maxCoords;
 	glm::vec3 minCoords;
-	glm::vec3 size;
+	glm::vec4 size;
 	glm::vec3 center;
 	glm::vec3 currentCenter;
 	BBox* boundingBox;

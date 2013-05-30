@@ -53,6 +53,7 @@ int wireframeMenuValue = 0;
 unsigned int modelCount = 1;
 unsigned int oldModelCount = 1;
 GLuint vao[50];
+std::vector<GLuint> shaderPrograms;
 int vaoIndex = 0;
 GLuint program1, program2;
 //comparator for findmax and findmin.
@@ -67,21 +68,23 @@ float randomRanged(float a, float b) {
 }
 void makeObjects(std::vector<int> list, float height){
 	float positionX = -.5f;
-	float positionY = -.45f;
+	float positionY = -.5f;
 	float boxWidth =  1.0f/list.size()/2.0f;
 	float margin = boxWidth/2.0f;
-	float scale = height/7.0f; //1  over the max
+	//get max value
+	float yScale = height/4.0f; //1  over the max
 	for(int i = 0; i < list.size(); i++){
 		float x = positionX + margin + boxWidth*i;
-		std::vector<glm::vec3> line;
-		line.push_back(glm::vec3(x, positionY, 0.0f));
-		line.push_back(glm::vec3(x, positionY + list.at(i)*scale, 0.0f));
-		Mesh* box = new Mesh("woman.coor", "woman.poly");
+		Mesh* box = new Mesh("cube.coor", "cube.poly");
 		box->calculateNormals();
-		box->createGLBuffer(false, vao, vaoIndex++);
-		box->setupShader(program1, globalCamera);
+		box->createGLBuffer(false, vao, vaoIndex);
+		box->setupShader(shaderPrograms[vaoIndex], globalCamera);
 		box->removeBoundingBox();
+		//scale, translate new height/2 on y axis. Perhaps need to update dimensions after scale.
+		box->scaleCenter(glm::vec3(boxWidth, list.at(i)*yScale, boxWidth));
+		box->moveTo(glm::vec3(x, positionY + box->getSize().y*.5f, 0.0f));
 		objects.push_back(box);
+		vaoIndex++;
 		//translate object so that top size is at x axis, scale y, translte back up
 	}
 }
@@ -92,15 +95,22 @@ void init()
 	program1 = Angel::InitShader("vshader.glsl", "fshader.glsl");
 	program2 = Angel::InitShader("vshader.glsl", "fshader.glsl");
 	//globalCamera = glm::perspective(35.0f, 1.0f, 0.01f, 200.0f); 
-	globalCamera =glm::ortho (-1.0f, 1.0f, -1.0f, 1.0f, 0.01f, 100.0f);
-	glGenVertexArrays(50, vao);
+	globalCamera =glm::ortho (-0.5f, 0.5f, -0.5f, 0.5f, 0.01f, 100.0f);
 	
 	//Questions: Should length of array be limited?
 	std::vector<int> unsorted;
+
 	unsorted.push_back(1);
+	unsorted.push_back(4);
+	unsorted.push_back(3);
+	unsorted.push_back(2);
 
+	glGenVertexArrays(50, vao);
+	for(auto i = unsorted.begin(); i < unsorted.end(); i++){
+		// this is really only necessary for picking, switch to one shader later
+		shaderPrograms.push_back(Angel::InitShader("vshader.glsl", "fshader.glsl"));
+	}
 	makeObjects(unsorted, .75f);
-
 	std::sort(unsorted.begin(), unsorted.end());
 	//test deletion
 	//objects.clear();
@@ -201,7 +211,7 @@ void reshape(int width, int height)
 	winWidth = width;
 	WINDOW_BORDER = HEIGHT - height;
 	winHeight = height;
-	std::cout << winHeight << std::endl;
+	// std::cout << winHeight << std::endl;
 	glViewport(0, 0, width,height);
 	TwWindowSize(width, height);
 }
@@ -262,13 +272,13 @@ void activeMouse(int x, int y){
 						scale = SCALE_FACTOR + 1.0f;
 					differenceY = abs(differenceY);
 					if(differenceY > 1.0)
-						selected->scaleCenter(scale);
+						selected->scaleCenterUniform(scale);
 					break;
 				case TRANSLATE:
 						winCoordNew = glm::vec3(x, winHeight - y - 1, depth);
 						objCoordsNew = selected->windowToWorld(winCoordNew, viewPort);
-						std::cout << "xPrev: " << prevX << ", " << prevY << std::endl;
-						std::cout << objCoordsNew.x << " " << objCoordsNew.y << std::endl;
+						// std::cout << "xPrev: " << prevX << ", " << prevY << std::endl;
+						// std::cout << objCoordsNew.x << " " << objCoordsNew.y << std::endl;
 						selected->absoluteTranslate(glm::vec3(objCoordsNew.x - objCoordsOld.x, objCoordsNew.y - objCoordsOld.y, 0.0f));
 						objCoordsOld = objCoordsNew;
 					break;
