@@ -490,16 +490,12 @@ void Mesh::setupShader(GLuint& _program, glm::mat4 projection){
 	subroutines[1] = specularOff; //default is specular off
 
 	//Viewing
-	//glm::vec4 eye(1.0, 0.0, 0.8, 1.0);
-	glm::vec3 eye(0.0, 0.0, 1.0);
+	glm::vec3 eye(1.0, 1.0, 1.0);
 	glm::vec3 at(0.0, 0.0, 0.0); //Look at origin
 	glm::vec3 up(0.0, 1.0, 0.0); //Determines which axis is "up" for the camera.
 	mView = glm::lookAt(eye, at, up);
-	
-	//(GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble near, GLdouble far);
-	mProjection = projection;
-	//mProjection = glm::ortho(-14.5f, 14.5f, -18.0f, 11.0f, -100.0f, 100.0f);
 
+	mProjection = projection;
 	mTransformation_loc = glGetUniformLocation(_program, "mTransformation");
 	modelView_loc = glGetUniformLocation(_program, "ModelView");
 	mProjection_loc = glGetUniformLocation(_program, "Projection");
@@ -509,6 +505,15 @@ void Mesh::setupShader(GLuint& _program, glm::mat4 projection){
 	this->program = _program;
     glBindVertexArray(0);
 }
+
+/*
+	Handles animations.
+*/
+
+void Mesh::update(){
+	
+}
+
 
 void Mesh::draw(){
 	glBindVertexArray(vao[vaoIndex]);

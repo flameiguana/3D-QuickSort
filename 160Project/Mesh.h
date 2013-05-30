@@ -72,6 +72,12 @@ public:
 	void setupShader(GLuint& program, glm::mat4 projection);
 	glm::vec4 getSize(){return size;}
 	glm::vec3 getCenter(){return center;}
+
+	//TODO
+	void addAnimation();
+	//do we need time parameter? possibly
+	void update();
+
 	void draw();
 	~Mesh();
 

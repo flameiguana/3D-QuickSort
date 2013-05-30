@@ -66,15 +66,17 @@ float randomRanged(float a, float b) {
 	float r = random * diff;
 	return a + r;
 }
+
+//So the cube being loaded is 
 void makeObjects(std::vector<int> list, float height){
-	float positionX = -.5f;
+	float startingX = -.5f;
 	float positionY = -.5f;
 	float boxWidth =  1.0f/list.size()/2.0f;
 	float margin = boxWidth/2.0f;
 	//get max value
-	float yScale = height/4.0f; //1  over the max
+	float yScale = height/(*std::max_element(list.begin(), list.end())); //height over the max
 	for(int i = 0; i < list.size(); i++){
-		float x = positionX + margin + boxWidth*i;
+		float x = startingX + boxWidth*.5f +  margin*(i+1) + boxWidth*i;
 		Mesh* box = new Mesh("cube.coor", "cube.poly");
 		box->calculateNormals();
 		box->createGLBuffer(false, vao, vaoIndex);
@@ -95,8 +97,7 @@ void init()
 	program1 = Angel::InitShader("vshader.glsl", "fshader.glsl");
 	program2 = Angel::InitShader("vshader.glsl", "fshader.glsl");
 	//globalCamera = glm::perspective(35.0f, 1.0f, 0.01f, 200.0f); 
-	globalCamera =glm::ortho (-0.5f, 0.5f, -0.5f, 0.5f, 0.01f, 100.0f);
-	
+	globalCamera = glm::ortho (-0.5f, 0.5f, -0.5f, 0.5f, 0.01f, 100.0f);
 	//Questions: Should length of array be limited?
 	std::vector<int> unsorted;
 
