@@ -7,6 +7,10 @@
 * Now includes zooming.
 */
 
+
+
+///TODO instead of having a camera per object, create a scene object
+
 #include "Angel.h"
 #include "Mesh.h"
 #include "glm/glm.hpp"
@@ -72,10 +76,11 @@ void makeObjects(std::vector<int> list, float height){
 		std::vector<glm::vec3> line;
 		line.push_back(glm::vec3(x, positionY, 0.0f));
 		line.push_back(glm::vec3(x, positionY + list.at(i)*scale, 0.0f));
-		Mesh* box = new Mesh(line);
+		Mesh* box = new Mesh("woman.coor", "woman.poly");
 		box->calculateNormals();
 		box->createGLBuffer(false, vao, vaoIndex++);
 		box->setupShader(program1, globalCamera);
+		box->removeBoundingBox();
 		objects.push_back(box);
 		//translate object so that top size is at x axis, scale y, translte back up
 	}
@@ -87,15 +92,12 @@ void init()
 	program1 = Angel::InitShader("vshader.glsl", "fshader.glsl");
 	program2 = Angel::InitShader("vshader.glsl", "fshader.glsl");
 	//globalCamera = glm::perspective(35.0f, 1.0f, 0.01f, 200.0f); 
-	globalCamera =glm::ortho (-.5f, .5f, -.5f, .5f, -100.0f, 100.0f);
+	globalCamera =glm::ortho (-1.0f, 1.0f, -1.0f, 1.0f, 0.01f, 100.0f);
 	glGenVertexArrays(50, vao);
 	
 	//Questions: Should length of array be limited?
 	std::vector<int> unsorted;
 	unsorted.push_back(1);
-	unsorted.push_back(2);
-	unsorted.push_back(7);
-	unsorted.push_back(3);
 
 	makeObjects(unsorted, .75f);
 
@@ -105,8 +107,6 @@ void init()
 	//makeObjects(unsorted, .75f);
 
 	//TODO: calculate new positions, translate there. Don't recreate objects.
-
-
 	/*
 	//Create mesh objects with different shader programs.
 	Mesh* figure = new Mesh("woman.coor", "woman.poly");
@@ -118,7 +118,7 @@ void init()
 	objects.push_back(figure);
 	*/
 	
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glPolygonMode(GL_FRONT, GL_FILL);
 	glLineWidth(4.0f);
 	glClearColor(1.0, 1.0, 1.0, 1.0);
 }
@@ -188,10 +188,6 @@ void mouseSelect(int button, int state, int x, int y){
 			objCoordsOld = selected->windowToWorld(winCoordsOld, viewPort);
 
 			viewPort = glm::vec4(0.0f, 0.0f, winWidth, winHeight);
-			if(selected->getCurrentShading() == FLAT)
-				selected->changeShading(SMOOTH);
-			else 
-				selected->changeShading(FLAT);
 		}
 		//Restore lighting.
 		for(auto i = objects.begin(); i < objects.end(); i++)
@@ -246,16 +242,16 @@ void activeMouse(int x, int y){
 		float scale, rotation;
 		bool positive = true;
 		if(zoomMode == true){
-			glm::vec3 movement;
+			float zoomFactor;
 			if(differenceY < 0.0f){
-				movement = glm::vec3(0.0f, 0.0f, -.01f);
+				zoomFactor = .95;
 			}
 			else {
-				movement = glm::vec3(0.0f, 0.0f, .01f);
+				zoomFactor = 1.05f;
 			}
 			for(auto i = objects.begin(); i < objects.end(); i++){
 				//very inneficient should probably make camera stuff external.
-				(*i)->moveCamera(movement);
+				(*i)->zoom(zoomFactor);
 			}
 		}
 		else if(selected != NULL){
@@ -364,7 +360,6 @@ void TW_CALL GetBoundingBoxCB(void *value, void *clientData)
 	(void)clientData;
 	*(int *)value = boundingBoxMenuValue;
 }
-
 
 int main(int argc, char **argv)
 {

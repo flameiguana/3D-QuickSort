@@ -87,8 +87,6 @@ public:
 			std::cout << "Warning: can't calculate normal with less than three vertices." << std::endl;
 		else
 		{
-			//1 - 0, 2 - 0
-			//flipped these because its the only way it works.
 			normal = glm::normalize(glm::cross(  *vertices.at(1) - *vertices.at(0), *vertices.at(2) - *vertices.at(0) ));
 		}
 	}
@@ -108,7 +106,6 @@ public:
 	GLuint vboVertices;
 	GLuint iboElements;
 	glm::mat4 transform;
-
 	//call this when creating buffers, use same vao
 	BBox(glm::vec3 min, glm::vec3 max, glm::vec3 centerPoint, glm::vec3 size){
 		//Create a unit cube.
@@ -281,12 +278,14 @@ Mesh::Mesh(const std::string &coords, const std::string &polys){
 		section = splitLine.at(0); //that label at the beginning of the part.
 		int first = atoi((splitLine.at(1).c_str())) -1; //first point. Use it as first point for all triangles.
 		poly->addVertex(&rawCoords.at(first));
+
 		int current = -1;
 		int previous;
 		int count = 1;
 		
 		for(auto j = splitLine.begin() + 2; j < splitLine.end(); j++){
 			
+			previous = current;
 			current = atoi((*j).c_str()) - 1;
 			poly->addVertex(&rawCoords.at(current));
 
@@ -309,7 +308,6 @@ Mesh::Mesh(const std::string &coords, const std::string &polys){
 				vertexList.at(current)->addAdjacentNormal(&(poly->normal));
 				vertexNRefs.push_back(&vertexList.at(current)->normal);
 			}
-			previous = current;
 			count++;
 		}
 		polygons.push_back(poly);
@@ -465,8 +463,6 @@ void Mesh::setupShader(GLuint& _program, glm::mat4 projection){
 	GLuint ambientProduct_loc = glGetUniformLocation(_program, "AmbientProduct");
 	GLuint lightSPecular_loc = glGetUniformLocation(_program, "SpecularProduct");
 	GLuint lightPosition_loc = glGetUniformLocation(_program, "LightPosition");
-	GLuint threeFourthsZ_loc = glGetUniformLocation(_program, "threeFourthsZ");
-	GLuint oneFourthZ_loc =  glGetUniformLocation(_program, "oneFourthZ");
 	GLuint shininess_loc = glGetUniformLocation(_program, "Shininess");
 	GLuint colorID_loc = glGetUniformLocation(_program, "colorID");
 	//Set uniform variables
@@ -534,7 +530,7 @@ void Mesh::draw(){
 	glVertexAttribPointer(vNormal, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(sizeofVertices));
 	glEnableVertexAttribArray(vNormal);
 
-	glDrawArrays(GL_LINES, 0 , rawVerts.size());
+	glDrawArrays(GL_TRIANGLES, 0 , rawVerts.size());
 
     glDisableVertexAttribArray(vPosition);
     glDisableVertexAttribArray(vNormal);
