@@ -510,10 +510,9 @@ void Mesh::setupShader(GLuint& _program, glm::mat4 projection){
 	Handles animations.
 */
 
-void Mesh::update(){
-	
-}
+void Mesh::update(int time){
 
+}
 
 void Mesh::draw(){
 	glBindVertexArray(vao[vaoIndex]);
@@ -566,7 +565,11 @@ void Mesh::changeShading(ShadingType shading){
 //Method 2: Just multiply with new translation matrix. Values will accumulate.
 void Mesh::translate(glm::vec3& offset){
 	//apply translation directly to current transfomation matrix
-	mTransformation = glm::translate(mTransformation, offset);
+	glm::mat4 translation(1.0f);
+	translation = glm::translate(translation, offset);
+	mTranslation = translation * mTranslation;
+	mTransformation = translation * mTransformation;
+	currentCenter = glm::vec3(mTranslation * glm::vec4(currentCenter, 1.0f));
 }
 
 void Mesh::absoluteTranslate(glm::vec3& offset){
@@ -577,12 +580,15 @@ void Mesh::absoluteTranslate(glm::vec3& offset){
 	mTranslation = translation * mTranslation;
 	//dont accumulate translation, just use latest
 	mTransformation = translation * mTransformation;
+	currentCenter = glm::vec3(mTranslation * glm::vec4(currentCenter, 1.0f));
 }
 
+//Move to an absolute coordinate on the map.
 void Mesh::moveTo(glm::vec3& point){
 	//translate to center, then translate to point.
 	mTranslation = glm::translate(glm::mat4(1.0f), point);
 	mTransformation = mTranslation * mRotation * mScale *  glm::translate(glm::mat4(1.0f), -center);
+	currentCenter = point;
 }
 
 void Mesh::rotate(glm::vec3& rotations, bool positive){

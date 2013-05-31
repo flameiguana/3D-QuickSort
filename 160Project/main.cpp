@@ -13,6 +13,7 @@
 
 #include "Angel.h"
 #include "Mesh.h"
+#include "Animation.h"
 #include "glm/glm.hpp"
 #include <Windows.h>
 
@@ -48,14 +49,12 @@ bool zoomMode;
 std::vector<Mesh*> objects;
 Mesh* selected;
 int specularMenuValue = 0;
-int boundingBoxMenuValue = 1;
 int wireframeMenuValue = 0;
 unsigned int modelCount = 1;
 unsigned int oldModelCount = 1;
 GLuint vao[50];
 std::vector<GLuint> shaderPrograms;
 int vaoIndex = 0;
-GLuint program1, program2;
 //comparator for findmax and findmin.
 inline bool compareZ(glm::vec3 &a, glm::vec3 &b) { return a.z < b.z; }
 
@@ -67,11 +66,55 @@ float randomRanged(float a, float b) {
 	return a + r;
 }
 
-//So the cube being loaded is 
+/*
+	1. Bring out both. A into positive Z axis, B into negative Z axis.
+	2. Take current locations of both, swap positions excluding z axis. Duration is same for both.
+	3. Push back into line.
+*/
+
+float boxWidth;
+
+void animationSwap(int a, int b){
+	glm::vec3 aPosition = objects.at(a)->getCenter();
+	glm::vec3 bPosition = objects.at(b)->getCenter();
+	float z = aPosition.z;
+	Animation offsetA(Animation::POSITION);
+	offsetA.setStart(aPosition);
+	offsetA.setGoal(glm::vec3(aPosition.x, aPosition.y, z + boxWidth), 400);
+
+	Animation offsetB(Animation::POSITION);
+	offsetB.setStart(bPosition);
+	offsetB.setGoal(glm::vec3(bPosition.x, bPosition.y, z - boxWidth), 400);
+
+	Animation switchA(Animation::POSITION);
+	switchA.setStart(glm::vec3(aPosition.x, aPosition.y, z + boxWidth));
+	switchA.setGoal(glm::vec3(bPosition.x, bPosition.y, z + boxWidth), 1000);
+
+	Animation switchB(Animation::POSITION);
+	switchB.setStart(glm::vec3(bPosition.x, bPosition.y, z - boxWidth));
+	switchB.setGoal(glm::vec3(aPosition.x, aPosition.y, z - boxWidth), 1000);
+
+	Animation returnA(Animation::POSITION);
+	returnA.setStart(glm::vec3(bPosition.x, bPosition.y, z + boxWidth));
+	returnA.setGoal(glm::vec3(bPosition.x, bPosition.y, z), 400);
+
+	Animation returnB(Animation::POSITION);
+	returnB.setStart(glm::vec3(aPosition.x, aPosition.y, z - boxWidth));
+	returnB.setGoal(glm::vec3(aPosition.x, aPosition.y, z), 400);
+
+	offsetA.chain(switchA);
+	switchA.chain(returnA);
+
+	offsetB.chain(switchB);
+	switchB.chain(returnB);
+	//Note that these will go out of scope, so pass a copy to mesh, not a reference 
+}
+
+//TODO: Allow custom z axis location
 void makeObjects(std::vector<int> list, float height){
 	float startingX = -.5f;
 	float positionY = -.5f;
-	float boxWidth =  1.0f/list.size()/2.0f;
+	boxWidth =  1.0f/list.size()/2.0f;
 	float margin = boxWidth/2.0f;
 	//get max value
 	float yScale = height/(*std::max_element(list.begin(), list.end())); //height over the max
@@ -91,16 +134,13 @@ void makeObjects(std::vector<int> list, float height){
 	}
 }
 
+Animation* slide;
 void init()
 {
-	//Load shaders and use the resulting shader program
-	program1 = Angel::InitShader("vshader.glsl", "fshader.glsl");
-	program2 = Angel::InitShader("vshader.glsl", "fshader.glsl");
 	//globalCamera = glm::perspective(35.0f, 1.0f, 0.01f, 200.0f); 
 	globalCamera = glm::ortho (-0.5f, 0.5f, -0.5f, 0.5f, 0.01f, 100.0f);
 	//Questions: Should length of array be limited?
 	std::vector<int> unsorted;
-
 	unsorted.push_back(1);
 	unsorted.push_back(4);
 	unsorted.push_back(3);
@@ -112,25 +152,19 @@ void init()
 		shaderPrograms.push_back(Angel::InitShader("vshader.glsl", "fshader.glsl"));
 	}
 	makeObjects(unsorted, .75f);
-	std::sort(unsorted.begin(), unsorted.end());
-	//test deletion
-	//objects.clear();
-	//makeObjects(unsorted, .75f);
+	slide = new Animation (Animation::POSITION);
+	glm::vec3 center = objects.at(0)->getCenter();
+	std::cout << "Current x " << center.x << "current y " << center.y;
+	slide->setStart(center);
+	slide->setGoal(glm::vec3(center.x, center.y, .25f), 200);
 
-	//TODO: calculate new positions, translate there. Don't recreate objects.
-	/*
-	//Create mesh objects with different shader programs.
-	Mesh* figure = new Mesh("woman.coor", "woman.poly");
-	figure->calculateNormals();
-	figure->createGLBuffer(false, vao, vaoIndex++);
-	figure->setupShader(program1, globalCamera);
-	figure->absoluteTranslate(-figure->getCenter());
-	figure->scaleCenter(1/figure->getSize().y);
-	objects.push_back(figure);
+	/*test deletion
+	objects.clear();
+	std::sort(unsorted.begin(), unsorted.end());
+	vaoIndex = 0;
+	makeObjects(unsorted, .75f);
 	*/
-	
 	glPolygonMode(GL_FRONT, GL_FILL);
-	glLineWidth(4.0f);
 	glClearColor(1.0, 1.0, 1.0, 1.0);
 }
 
@@ -144,8 +178,12 @@ void display()
 	}
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
 	glClearDepth(1.0);
-	for(auto i = objects.begin(); i < objects.end(); i++)
+	int time = glutGet(GLUT_ELAPSED_TIME);
+	//slide->update(objects.at(0), time);
+	for(auto i = objects.begin(); i < objects.end(); i++){
+		//(*i)->update(time);
 		(*i)->draw();
+	}
 	TwDraw();
 	glutSwapBuffers();
 	glutPostRedisplay();
@@ -249,7 +287,6 @@ void activeMouse(int x, int y){
 	if(!TwEventMouseMotionGLUT(x, y)){
 		float differenceY = (float)(winHeight - y - 1 - prevY);
 		float differenceX = (float)(prevX - x);
-
 		float scale, rotation;
 		bool positive = true;
 		if(zoomMode == true){
@@ -350,28 +387,6 @@ void TW_CALL GetSpecularCB(void *value, void *clientData)
 	*(int *)value = specularMenuValue;
 }
 
-//Toggles bounding box
-void TW_CALL SetBoundingBoxCB(const void *value, void *clientData)
-{
-	(void)clientData; // unused
-
-	boundingBoxMenuValue = *(const int *)value;
-	if( boundingBoxMenuValue!=0 ) {
-		for(auto i = objects.begin(); i < objects.end(); i++)
-			(*i)->drawBoundingBox();
-	}
-	else{
-		for(auto i = objects.begin(); i < objects.end(); i++)
-			(*i)->removeBoundingBox();
-	}
-}
-
-void TW_CALL GetBoundingBoxCB(void *value, void *clientData)
-{
-	(void)clientData;
-	*(int *)value = boundingBoxMenuValue;
-}
-
 int main(int argc, char **argv)
 {
 	glutInit(&argc, argv);
@@ -411,7 +426,6 @@ int main(int argc, char **argv)
 	}
 
 	TwAddVarCB(bar, "Specular", TW_TYPE_BOOL32, SetSpecularCB, GetSpecularCB, NULL, " key=space help='Toggle Specular Lighting' ");
-	TwAddVarCB(bar, "Bounding Box", TW_TYPE_BOOL32, SetBoundingBoxCB, GetBoundingBoxCB, NULL, " key='b' help='Toggle Visibility of bounding box' ");
 	TwAddVarRW(bar, "Number of Models", TW_TYPE_UINT32, &modelCount, " min=1 max=50 key='+' ");
 	init();
 	glutMainLoop();

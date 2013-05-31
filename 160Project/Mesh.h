@@ -7,7 +7,6 @@ An incomplete mesh class that could use more features.
 Currently supports:
 Creating a Buffer.
 Creating a shader (with hard-coded values)
-Drawing
 Reading from a file with Alex Pang's format.
 Reading from a list of vertices.
 Calculating normals for verts and surfaces.
@@ -71,12 +70,12 @@ public:
 	bool colorMatch(unsigned char *color);
 	void setupShader(GLuint& program, glm::mat4 projection);
 	glm::vec4 getSize(){return size;}
-	glm::vec3 getCenter(){return center;}
+	glm::vec3 getCenter(){return currentCenter;}
 
 	//TODO
 	void addAnimation();
 	//do we need time parameter? possibly
-	void update();
+	void update(int time);
 
 	void draw();
 	~Mesh();
@@ -116,6 +115,7 @@ private:
 	glm::vec3 minCoords;
 	glm::vec4 size;
 	glm::vec3 center;
+	//specifies center of display of the mesh (may differ from actual coordinates in vertices array)
 	glm::vec3 currentCenter;
 	BBox* boundingBox;
 

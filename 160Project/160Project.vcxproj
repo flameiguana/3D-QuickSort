@@ -84,12 +84,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Angel.h" />
+    <ClInclude Include="Animation.h" />
     <ClInclude Include="CheckError.h" />
     <ClInclude Include="mat.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="vec.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Animation.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="InitShader.cpp" />
     <ClCompile Include="Mesh.cpp" />
