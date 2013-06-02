@@ -25,11 +25,11 @@ Changing lighting type.
 #include <fstream>
 #include <queue>
 #include <sstream>
-
+#include "Camera.h"
 
 typedef enum {FLAT, SMOOTH} ShadingType;
 typedef enum {DIFFUSE = 1, AMBIENT, DIFFUSE_AND_AMBIENT, COLOR_ID} LightingType;
-typedef enum {ORTHOGRAPHIC = 1, PERSPECTIVE} CameraType;
+
 class Mesh
 {
 public:
@@ -47,7 +47,7 @@ public:
 	void createGLBuffer(bool smooth, GLuint* vao, int index);
 	void changeShading(ShadingType shading);
 	ShadingType getCurrentShading(){return currentShading;}
-	void setLighting(LightingType lighitng, bool specular);
+	void setLighting(LightingType lighting, bool specular);
 
 	void translate(glm::vec3& offset);
 	void rotateSelf(glm::vec3& offset, bool positive=true);
@@ -69,7 +69,7 @@ public:
 	void removeBoundingBox(){drawBox = false;}
 
 	bool colorMatch(unsigned char *color);
-	void setupShader(GLuint& program, glm::mat4 projection);
+	void setupShader(GLuint& program, Camera* camera);
 	glm::vec4 getSize(){return size;}
 	glm::vec3 getCenter(){return currentCenter;}
 
@@ -93,24 +93,24 @@ public:
 
 	GLuint vPosition, vNormal, modelView_loc, mTransformation_loc, mProjection_loc;
 	/* Uniform Variables*/
-	glm::mat4 mView;
-	glm::mat4 mProjection;
 	glm::mat4 mTransformation;
 
 	size_t sizeofVertices;
 	size_t sizeofNormals;
 
 private:
+
+	Camera* camera;
 	class Vertex;
 	class Polygon;
 	class BBox;
 	bool drawBox;
 	//Tells us to reload uniform variables.
 	bool changedUniform;
-	CameraType cameraType;
-	glm::mat4 mTranslation, mTransView;
+
+	glm::mat4 mTranslation;
 	glm::mat4 mRotation;
-	glm::mat4 mScale, mScaleProjection;
+	glm::mat4 mScale;
 	glm::vec3 maxCoords;
 	glm::vec3 minCoords;
 	glm::vec4 size;
