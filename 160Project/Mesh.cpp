@@ -432,9 +432,9 @@ void Mesh::createGLBuffer(bool smooth, GLuint* vao, int index){
 }
 
 //Should pass in names as parameters.
-void Mesh::setupShader(GLuint& _program, glm::mat4 projection){
+void Mesh::setupShader(GLuint& _program, Camera* camera_){
 	currentShading = FLAT;
-	
+	this->camera = camera_;
 	glBindVertexArray(vao[vaoIndex]);
 	glUseProgram(_program);
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
@@ -489,18 +489,10 @@ void Mesh::setupShader(GLuint& _program, glm::mat4 projection){
 	subroutines[0] = diffuseIndex; //default is diffuse
 	subroutines[1] = specularOff; //default is specular off
 
-	//Viewing
-	glm::vec3 eye(1.0, 1.0, 1.0);
-	glm::vec3 at(0.0, 0.0, 0.0); //Look at origin
-	glm::vec3 up(0.0, 1.0, 0.0); //Determines which axis is "up" for the camera.
-	mView = glm::lookAt(eye, at, up);
-
-	mProjection = projection;
 	mTransformation_loc = glGetUniformLocation(_program, "mTransformation");
 	modelView_loc = glGetUniformLocation(_program, "ModelView");
 	mProjection_loc = glGetUniformLocation(_program, "Projection");
-	glUniformMatrix4fv(modelView_loc, 1, GL_FALSE, glm::value_ptr(mView));
-	glUniformMatrix4fv(mProjection_loc, 1, GL_FALSE, glm::value_ptr(mProjection));
+
 	glUniformMatrix4fv(mTransformation_loc, 1, GL_FALSE, glm::value_ptr(mTransformation));
 	this->program = _program;
     glBindVertexArray(0);
@@ -526,10 +518,9 @@ void Mesh::draw(){
 
 	glUniformMatrix4fv(mTransformation_loc, 1, GL_FALSE, glm::value_ptr(mTransformation));
 	
-	//moveCamera(glm::vec3(0.0f, 0.0f, -.01f));
-	glUniformMatrix4fv(modelView_loc, 1, GL_FALSE, glm::value_ptr(mView));
-
-	glUniformMatrix4fv(mProjection_loc, 1, GL_FALSE, glm::value_ptr(mProjection));
+	glUniformMatrix4fv(modelView_loc, 1, GL_FALSE, glm::value_ptr(camera->getModelView()));
+	glUniformMatrix4fv(mProjection_loc, 1, GL_FALSE, glm::value_ptr(camera->getProjection()));
+	
 	//Rebind location of these things
 	glVertexAttribPointer(vPosition, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(0));
 	glEnableVertexAttribArray(vPosition);
@@ -569,7 +560,7 @@ void Mesh::translate(glm::vec3& offset){
 	translation = glm::translate(translation, offset);
 	mTranslation = translation * mTranslation;
 	mTransformation = translation * mTransformation;
-	currentCenter = glm::vec3(mTranslation * glm::vec4(currentCenter, 1.0f));
+	currentCenter = glm::vec3(translation * glm::vec4(currentCenter, 1.0f));
 }
 
 void Mesh::absoluteTranslate(glm::vec3& offset){
@@ -636,19 +627,6 @@ void Mesh::scale(float scaling){
 	size = mScale * size;
 }
 
-void Mesh::zoom(float zoomFactor){
-	glm::mat4 scale(1.0f);
-	scale = glm::scale(scale, glm::vec3(zoomFactor, zoomFactor, zoomFactor));
-	mProjection = scale * mProjection;
-	mScaleProjection = scale * mScaleProjection;
-}
-
-void Mesh::moveCamera(glm::vec3& offset){
-	glm::mat4 translation(1.0f);
-	translation = glm::translate(translation, offset );
-	mView = translation * mView;
-	mTransView = translation * mTransView;
-}
 
 void Mesh::scaleCenterUniform(float scaling){
 	glm::mat4 scale(1.0f);
@@ -666,9 +644,6 @@ void Mesh::scaleCenter(glm::vec3& scaleFactor){
 	mTransformation = mTranslation * glm::translate(glm::mat4(1.0f), center) * mRotation * scale * mScale * glm::translate(glm::mat4(1.0f), -center);
 	mScale = scale * mScale;
 	size = mScale * size;
-}
-glm::vec3 Mesh::windowToWorld(glm::vec3 winCoord, glm::vec4 viewPort){
-	return glm::unProject(winCoord, mView, mProjection, viewPort);
 }
 
 //Change indices of subroutines.
