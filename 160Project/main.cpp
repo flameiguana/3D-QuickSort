@@ -14,6 +14,7 @@
 #include "Angel.h"
 #include "Mesh.h"
 #include "Animation.h"
+#include "Camera.h"
 #include "glm/glm.hpp"
 #include <Windows.h>
 
@@ -33,7 +34,7 @@ int winWidth;
 int winHeight;
 
 typedef enum {SCALE=1, ROTATE_V, ROTATE_H, TRANSLATE} TransformMode;
-glm::mat4 globalCamera;
+Camera* globalCamera;
 TransformMode currentTransform;
 //Initialize the static variable.
 unsigned char Mesh::globalColorID[3] = {0,0,0};
@@ -105,11 +106,13 @@ float boxWidth;
 //Idea, implement transparent block
 
 //a unit of animation, can use this to dynamically change animation speed depending on distance travel
-int animationDuration = 2000;
+int animationDuration = 700;
 void animationSwap(int a, int b){
 
 	Mesh* meshA = objects.at(a);
 	Mesh* meshB = objects.at(b);
+	float displacementA = meshA->getSize().y*.5f;
+	float displacementB = meshB->getSize().y*.5f;
 
 	glm::vec3 aPosition = objects.at(a)->getCenter();
 	glm::vec3 bPosition = objects.at(b)->getCenter();
@@ -121,11 +124,11 @@ void animationSwap(int a, int b){
 	
 	Animation switchA(Animation::POSITION);
 	switchA.setStart(meshA, glm::vec3(aPosition.x, aPosition.y, z + boxWidth));
-	switchA.setGoal(glm::vec3(bPosition.x, bPosition.y, z + boxWidth), animationDuration);
+	switchA.setGoal(glm::vec3(bPosition.x, aPosition.y, z + boxWidth), animationDuration);
 
 	Animation returnA(Animation::POSITION);
-	returnA.setStart(meshA, glm::vec3(bPosition.x, bPosition.y, z));
-	returnA.setGoal(glm::vec3(bPosition.x, bPosition.y, z), animationDuration/2);
+	returnA.setStart(meshA, glm::vec3(bPosition.x, aPosition.y, z + boxWidth));
+	returnA.setGoal(glm::vec3(bPosition.x, aPosition.y, z), animationDuration/2);
 	
 	Animation offsetB(Animation::POSITION);
 	offsetB.setStart(meshB, bPosition);
@@ -133,18 +136,19 @@ void animationSwap(int a, int b){
 
 	Animation switchB(Animation::POSITION);
 	switchB.setStart(meshB, glm::vec3(bPosition.x, bPosition.y, z - boxWidth));
-	switchB.setGoal(glm::vec3(aPosition.x, aPosition.y, z - boxWidth), animationDuration);
+	switchB.setGoal(glm::vec3(aPosition.x, bPosition.y, z - boxWidth), animationDuration);
 
 	Animation returnB(Animation::POSITION);
-	returnB.setStart(meshB, glm::vec3(aPosition.x, aPosition.y, z - boxWidth));
-	returnB.setGoal(glm::vec3(aPosition.x, aPosition.y, z), animationDuration/2);
+	returnB.setStart(meshB, glm::vec3(aPosition.x, bPosition.y, z - boxWidth));
+	returnB.setGoal(glm::vec3(aPosition.x, bPosition.y, z), animationDuration/2);
 
-
-	offsetA.chain(switchA);
+	//chain sort of in reverse because of copy by value. consider changin
 	switchA.chain(returnA);
+	offsetA.chain(switchA);
 
-	offsetB.chain(switchB);
 	switchB.chain(returnB);
+	offsetB.chain(switchB);
+	
 	//Note that these will go out of scope, so pass a copy to mesh, not a reference 
 	animations.push_back(offsetA);
 	animations.push_back(offsetB);
@@ -178,7 +182,9 @@ Animation* slide;
 void init()
 {
 	//globalCamera = glm::perspective(35.0f, 1.0f, 0.01f, 200.0f); 
-	globalCamera = glm::ortho (-0.5f, 0.5f, -0.5f, 0.5f, 0.01f, 100.0f);
+	glm::mat4 ortho = glm::ortho (-0.5f, 0.5f, -0.5f, 0.5f, 0.01f, 100.0f);
+	globalCamera = new Camera(ORTHOGRAPHIC, ortho);
+	globalCamera->moveTo(glm::vec3(1.0f, 1.0f, 1.0f));
 	//Questions: Should length of array be limited?
 	std::vector<int> unsorted;
 	unsorted.push_back(1);
@@ -275,7 +281,7 @@ void mouseSelect(int button, int state, int x, int y){
 		if(selected != NULL){
 			//iniitalize "previous"
 			winCoordsOld = glm::vec3(prevX, prevY, depth);
-			objCoordsOld = selected->windowToWorld(winCoordsOld, viewPort);
+			objCoordsOld = globalCamera->windowToWorld(winCoordsOld, viewPort);
 
 			viewPort = glm::vec4(0.0f, 0.0f, winWidth, winHeight);
 		}
@@ -340,7 +346,7 @@ void activeMouse(int x, int y){
 			}
 			for(auto i = objects.begin(); i < objects.end(); i++){
 				//very inneficient should probably make camera stuff external.
-				(*i)->zoom(zoomFactor);
+				globalCamera->scale(zoomFactor);
 			}
 		}
 		else if(selected != NULL){
@@ -355,7 +361,7 @@ void activeMouse(int x, int y){
 					break;
 				case TRANSLATE:
 						winCoordNew = glm::vec3(x, winHeight - y - 1, depth);
-						objCoordsNew = selected->windowToWorld(winCoordNew, viewPort);
+						objCoordsNew = globalCamera->windowToWorld(winCoordNew, viewPort);
 						// std::cout << "xPrev: " << prevX << ", " << prevY << std::endl;
 						// std::cout << objCoordsNew.x << " " << objCoordsNew.y << std::endl;
 						selected->absoluteTranslate(glm::vec3(objCoordsNew.x - objCoordsOld.x, objCoordsNew.y - objCoordsOld.y, 0.0f));

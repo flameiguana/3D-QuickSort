@@ -10,7 +10,7 @@ Creating a shader (with hard-coded values)
 Reading from a file with Alex Pang's format.
 Reading from a list of vertices.
 Calculating normals for verts and surfaces.
-Changing lighting type.
+Changing lighting type.s
 */
 
 #pragma once
@@ -64,7 +64,6 @@ public:
 	void anchorBottom();
 	void scaleCenterUniform(float scaling);
 	void scaleCenter(glm::vec3& scaleFactor);
-	glm::vec3 windowToWorld(glm::vec3 winCoord, glm::vec4 viewPort);
 	void drawBoundingBox(){drawBox = true;}
 	void removeBoundingBox(){drawBox = false;}
 
