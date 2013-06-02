@@ -510,9 +510,6 @@ void Mesh::setupShader(GLuint& _program, glm::mat4 projection){
 	Handles animations.
 */
 
-void Mesh::update(int time){
-
-}
 
 void Mesh::draw(){
 	glBindVertexArray(vao[vaoIndex]);

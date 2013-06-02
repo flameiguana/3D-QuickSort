@@ -3,7 +3,8 @@
 Animation::Animation(AnimationType type):animationType(type), started(false), ended(false){}
 
 
-void Animation::setStart(glm::vec3& start){
+void Animation::setStart(Mesh* mesh, glm::vec3& start){
+	this->mesh = mesh;
 	this->start = start;
 }
 void Animation::setGoal(glm::vec3& goal, int duration){
@@ -22,7 +23,7 @@ glm::vec3 Animation::calculateStep(float t){
 }
 
 //Implement these, decide whether to make calculations separately or not.
-void Animation::update(Mesh* mesh, int time){
+void Animation::update(int time){
 	if(!started){
 		startTime = time;
 		started = true;

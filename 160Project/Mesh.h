@@ -15,6 +15,7 @@ Changing lighting type.
 
 #pragma once
 #include "Angel.h"
+// #include "Animation.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -73,10 +74,9 @@ public:
 	glm::vec3 getCenter(){return currentCenter;}
 
 	//TODO
-	void addAnimation();
+//	void addAnimation(Animation* animation_);
 	//do we need time parameter? possibly
-	void update(int time);
-
+	//void update(int time);
 	void draw();
 	~Mesh();
 
@@ -115,6 +115,7 @@ private:
 	glm::vec3 minCoords;
 	glm::vec4 size;
 	glm::vec3 center;
+	//Animation* animation;
 	//specifies center of display of the mesh (may differ from actual coordinates in vertices array)
 	glm::vec3 currentCenter;
 	BBox* boundingBox;

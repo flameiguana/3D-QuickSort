@@ -24,7 +24,7 @@
 #include <iostream>
 #include <algorithm>
 #include <string>
-
+#include <list>
 #include <AntTweakBar.h>
 
 int WINDOW_BORDER;
@@ -55,6 +55,35 @@ unsigned int oldModelCount = 1;
 GLuint vao[50];
 std::vector<GLuint> shaderPrograms;
 int vaoIndex = 0;
+
+
+/*
+How to cycle animations:
+	call update on each one
+	if it ends and doesnt have a link to another one, destroy it
+		otherwise switch the pointer to this one to the other one.
+
+*/
+std::list<Animation> animations;
+
+void updateAnimations(int time){
+	auto i = animations.begin();
+	//dont want to call update on the linked animations.
+	auto initialEnd = animations.end();
+	while(i != initialEnd){
+		bool hasEnded = (*i).hasEnded();
+		if(hasEnded){
+			if((*i).getLink() != 0)
+				animations.push_back(*(*i).getLink()); //need to make sure it doesnt activate.
+			i = animations.erase(i); //update iterator to be after erased oneS
+		}
+		else {
+			(*i).update(time);
+			++i;
+		}
+	}
+}
+
 //comparator for findmax and findmin.
 inline bool compareZ(glm::vec3 &a, glm::vec3 &b) { return a.z < b.z; }
 
@@ -73,34 +102,43 @@ float randomRanged(float a, float b) {
 */
 
 float boxWidth;
+//Idea, implement transparent block
 
+//a unit of animation, can use this to dynamically change animation speed depending on distance travel
+int animationDuration = 2000;
 void animationSwap(int a, int b){
+
+	Mesh* meshA = objects.at(a);
+	Mesh* meshB = objects.at(b);
+
 	glm::vec3 aPosition = objects.at(a)->getCenter();
 	glm::vec3 bPosition = objects.at(b)->getCenter();
 	float z = aPosition.z;
+
 	Animation offsetA(Animation::POSITION);
-	offsetA.setStart(aPosition);
-	offsetA.setGoal(glm::vec3(aPosition.x, aPosition.y, z + boxWidth), 400);
-
-	Animation offsetB(Animation::POSITION);
-	offsetB.setStart(bPosition);
-	offsetB.setGoal(glm::vec3(bPosition.x, bPosition.y, z - boxWidth), 400);
-
+	offsetA.setStart(meshA, aPosition);
+	offsetA.setGoal(glm::vec3(aPosition.x, aPosition.y, z + boxWidth), animationDuration/2);
+	
 	Animation switchA(Animation::POSITION);
-	switchA.setStart(glm::vec3(aPosition.x, aPosition.y, z + boxWidth));
-	switchA.setGoal(glm::vec3(bPosition.x, bPosition.y, z + boxWidth), 1000);
-
-	Animation switchB(Animation::POSITION);
-	switchB.setStart(glm::vec3(bPosition.x, bPosition.y, z - boxWidth));
-	switchB.setGoal(glm::vec3(aPosition.x, aPosition.y, z - boxWidth), 1000);
+	switchA.setStart(meshA, glm::vec3(aPosition.x, aPosition.y, z + boxWidth));
+	switchA.setGoal(glm::vec3(bPosition.x, bPosition.y, z + boxWidth), animationDuration);
 
 	Animation returnA(Animation::POSITION);
-	returnA.setStart(glm::vec3(bPosition.x, bPosition.y, z + boxWidth));
-	returnA.setGoal(glm::vec3(bPosition.x, bPosition.y, z), 400);
+	returnA.setStart(meshA, glm::vec3(bPosition.x, bPosition.y, z));
+	returnA.setGoal(glm::vec3(bPosition.x, bPosition.y, z), animationDuration/2);
+	
+	Animation offsetB(Animation::POSITION);
+	offsetB.setStart(meshB, bPosition);
+	offsetB.setGoal(glm::vec3(bPosition.x, bPosition.y, z - boxWidth), animationDuration/2);
+
+	Animation switchB(Animation::POSITION);
+	switchB.setStart(meshB, glm::vec3(bPosition.x, bPosition.y, z - boxWidth));
+	switchB.setGoal(glm::vec3(aPosition.x, aPosition.y, z - boxWidth), animationDuration);
 
 	Animation returnB(Animation::POSITION);
-	returnB.setStart(glm::vec3(aPosition.x, aPosition.y, z - boxWidth));
-	returnB.setGoal(glm::vec3(aPosition.x, aPosition.y, z), 400);
+	returnB.setStart(meshB, glm::vec3(aPosition.x, aPosition.y, z - boxWidth));
+	returnB.setGoal(glm::vec3(aPosition.x, aPosition.y, z), animationDuration/2);
+
 
 	offsetA.chain(switchA);
 	switchA.chain(returnA);
@@ -108,6 +146,8 @@ void animationSwap(int a, int b){
 	offsetB.chain(switchB);
 	switchB.chain(returnB);
 	//Note that these will go out of scope, so pass a copy to mesh, not a reference 
+	animations.push_back(offsetA);
+	animations.push_back(offsetB);
 }
 
 //TODO: Allow custom z axis location
@@ -155,9 +195,9 @@ void init()
 	slide = new Animation (Animation::POSITION);
 	glm::vec3 center = objects.at(0)->getCenter();
 	std::cout << "Current x " << center.x << "current y " << center.y;
-	slide->setStart(center);
+	slide->setStart(objects.at(0), center);
 	slide->setGoal(glm::vec3(center.x, center.y, .25f), 200);
-
+	animationSwap(0, 1);
 	/*test deletion
 	objects.clear();
 	std::sort(unsorted.begin(), unsorted.end());
@@ -179,7 +219,8 @@ void display()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
 	glClearDepth(1.0);
 	int time = glutGet(GLUT_ELAPSED_TIME);
-	//slide->update(objects.at(0), time);
+	//slide->update(time);
+	updateAnimations(time);
 	for(auto i = objects.begin(); i < objects.end(); i++){
 		//(*i)->update(time);
 		(*i)->draw();
