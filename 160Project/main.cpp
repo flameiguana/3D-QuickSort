@@ -344,10 +344,7 @@ void activeMouse(int x, int y){
 			else {
 				zoomFactor = 1.05f;
 			}
-			for(auto i = objects.begin(); i < objects.end(); i++){
-				//very inneficient should probably make camera stuff external.
 				globalCamera->scale(zoomFactor);
-			}
 		}
 		else if(selected != NULL){
 			switch(currentTransform){
