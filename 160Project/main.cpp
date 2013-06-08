@@ -237,7 +237,6 @@ void display()
 }
 
 glm::vec4 viewPort;
-
 glm::vec3 objCoordsNew, objCoordsOld;
 glm::vec3 winCoordNew, winCoordsOld;
 int prevX;
