@@ -89,6 +89,7 @@
     <ClInclude Include="CheckError.h" />
     <ClInclude Include="mat.h" />
     <ClInclude Include="Mesh.h" />
+    <ClInclude Include="QuickSortVisual.h" />
     <ClInclude Include="vec.h" />
   </ItemGroup>
   <ItemGroup>
@@ -97,6 +98,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="InitShader.cpp" />
     <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="QuickSortVisual.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="AntTweakBar.dll" />

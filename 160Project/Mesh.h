@@ -42,7 +42,6 @@ public:
 	//float getShininess(){return shininess;}
 	//float setShininess(float value){shininess = value;}
 	GLuint getCurrentLighting(){return currentLighting;}
-
 	//Prereq, normals should have been calculated already
 	void createGLBuffer(bool smooth, GLuint* vao, int index);
 	void changeShading(ShadingType shading);
