@@ -28,7 +28,9 @@ public:
 	void chain(Animation& animation);
 
 	bool hasEnded() { return ended;}
+	bool containsLink() {return hasLink;}
 	Animation* getLink(){ return nextLink;}
+	~Animation();
 private:
 	glm::vec3 calculateStep(float t);
 	AnimationType animationType;
@@ -39,6 +41,7 @@ private:
 	int timeLeft;
 	int duration;
 	bool started;
+	bool hasLink;
 	bool ended;
 	Mesh* mesh;
 	Animation* nextLink;

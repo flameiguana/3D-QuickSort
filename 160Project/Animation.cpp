@@ -1,6 +1,6 @@
 #include "Animation.h" 
 
-Animation::Animation(AnimationType type):animationType(type), started(false), ended(false){}
+Animation::Animation(AnimationType type):animationType(type), started(false), ended(false),hasLink(false){}
 
 
 void Animation::setStart(Mesh* mesh, glm::vec3& start){
@@ -59,5 +59,10 @@ void Animation::update(int time){
 
 void Animation::chain(Animation& animation){
 	//copy to heap
+	hasLink = true;
 	nextLink = new Animation(animation);
+}
+
+Animation::~Animation(){
+	//delete nextLink;
 }

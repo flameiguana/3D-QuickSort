@@ -1,7 +1,9 @@
 Key Points to Illustrate:
 Sort is being done recursively and in place. It is a divide and conquer algorithmn.
 
+//Print this out in console, have screen if have time.
 
+//finishes when left is right
 Quicksort(A, left, right)
 	if(left < right)
 		pivot = partition(A, left, right)
@@ -13,14 +15,14 @@ Quicksort(A, left, right)
 
 :Optionally randomize right, point pg 179
 Partition(A, left, right)
-	x = A.at(right)
-	i = left
-	for j = left to right - 1
-		if A.at(j) <= x
-			swap A.at(i) with A.at(j)
-			i++
-	swap A.at(i) with A.at(right)
-	return i;
+	pivotValue = A.at(right)
+	storeIndex = left
+	for i = left to right - 1
+		if A.at(i) <= pivotValue
+			swap A.at(storeIndex) with A.at(i)
+			storeIndex++
+	swap A.at(storeIndex) with A.at(right)
+	return storeIndex;
 i and j signify currently comparing values
 
 
@@ -37,6 +39,16 @@ Implementation To Do:
 2. Work on a single swap animation (dedicated function)
 	a) Specify positions to reach, with a certain time limmit. Interpolate to there. done
 	b) should i have an animation functions library? maybe later, for now just put them in main
+3. Work on partition animation
+	Steps
+	a) Choose pivot (for now rightmost)
+	b) Swap with rightmost element of array.
+	c) Move scanning pointer i down to pivot - 1. It only moves when it sees something less than rightmost value. This ensures that everything to left is less than pivot.
+	d) Whenever there is a swap in the code, call swap animation.
+4. Implement recursion
+	Steps
+	a) Once partition animation finishes, call quicksort step again
+5. Mark pivot point
 
 Remarks:
 Each object doesn't need its own shader. Even for picking, you can just pass in color id in draw loop.

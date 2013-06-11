@@ -19,12 +19,14 @@
 #include <Windows.h>
 
 #include <cmath>
+#include <utility>
 #include <vector>
 #include <cstdlib>
 #include <ctime>
 #include <iostream>
 #include <algorithm>
 #include <string>
+#include <stack>
 #include <list>
 #include <AntTweakBar.h>
 
@@ -57,6 +59,7 @@ GLuint vao[50];
 std::vector<GLuint> shaderPrograms;
 int vaoIndex = 0;
 
+void display();
 
 /*
 How to cycle animations:
@@ -66,16 +69,19 @@ How to cycle animations:
 
 */
 std::list<Animation> animations;
+std::vector<int> array;
+std::stack<int> stack;
 
 void updateAnimations(int time){
 	auto i = animations.begin();
 	//dont want to call update on the linked animations.
-	auto initialEnd = animations.end();
-	while(i != initialEnd){
+	std::list<Animation> links;
+	while(i != animations.end()){
+		// std::cout << "still animating" << std::endl;
 		bool hasEnded = (*i).hasEnded();
 		if(hasEnded){
-			if((*i).getLink() != 0)
-				animations.push_back(*(*i).getLink()); //need to make sure it doesnt activate.
+			if((*i).containsLink())
+				links.push_back(*(*i).getLink()); //need to make sure it doesnt activate.
 			i = animations.erase(i); //update iterator to be after erased oneS
 		}
 		else {
@@ -83,6 +89,8 @@ void updateAnimations(int time){
 			++i;
 		}
 	}
+	//merge list of animation links
+	animations.splice(animations.begin(), links);
 }
 
 //comparator for findmax and findmin.
@@ -107,7 +115,10 @@ float boxWidth;
 
 //a unit of animation, can use this to dynamically change animation speed depending on distance travel
 int animationDuration = 700;
-void animationSwap(int a, int b){
+
+//take in an array of pairs.
+/*std::pair<Animation, Animation> */
+void swapAnimation(int a, int b){
 
 	Mesh* meshA = objects.at(a);
 	Mesh* meshB = objects.at(b);
@@ -150,8 +161,108 @@ void animationSwap(int a, int b){
 	offsetB.chain(switchB);
 	
 	//Note that these will go out of scope, so pass a copy to mesh, not a reference 
+	//return std::pair<Animation, Animation>(offsetA, offsetB);
 	animations.push_back(offsetA);
 	animations.push_back(offsetB);
+}
+
+int scanner = 0;
+int step = 0;
+int left = 0;
+int right = 0;
+void swap(int a, int b){
+	int temp = array.at(a);
+	array.at(a) = array.at(b);
+	array.at(b) = temp;
+	Mesh* tempMesh = objects.at(a);
+	objects.at(a) = objects.at(b);
+	objects.at(b) = tempMesh;
+}
+
+//this will only be called when animation queue is empty;
+int partitionAnimationStep(int left, int right, int step, int& scanner){
+	//assume right = pivot
+	int pivotValue = array.at(right);
+	//instead of having for loop, iterate by steps
+	int i = left + step;
+	if(i < right){
+		std::cout << "Check if scanner <= pivotValue. " << std::endl;
+		if(array.at(i) <= pivotValue){
+			//highlight swapped ones
+			//if i == scanner, don't do swap animation
+			swapAnimation(i, scanner);
+			std::cout << "Swapping array[" << i << "] with array[" << scanner <<"]" << std::endl;
+			swap(i, scanner);
+			scanner++;
+		}
+	}
+	//i == right
+	else {
+		swapAnimation(right, scanner);
+		swap(right, scanner);
+		
+	}
+	return scanner;
+}
+
+//A non recursive version of this shizzle
+bool havePopped = false;
+bool goTime = false;
+bool finished = false;
+int pivot;
+
+void quickSortStep(int& left, int& right, int& step, int& scanner){
+
+	if(!finished){
+
+		if(!havePopped){
+			right = stack.top();
+			stack.pop();
+			left = stack.top();
+			stack.pop();
+			scanner = left; //Start partition function's scanner at 0
+			havePopped = true;
+		}
+
+		//This means that partitionAnimation has finished.
+		if(step > right - left){
+			step = 0;
+			std::cout << "Pivot is " << pivot << std::endl;
+			havePopped = false;
+			std::cout << "Ready to Recurse" << std::endl;   
+			goTime = true;
+		}
+
+		else
+			pivot = partitionAnimationStep(left, right, step++, scanner);
+		//the value of this pivot value is ignored until here.
+		if(goTime){
+
+			//Right side of pivot is added to stack if there are elements to right of it.
+			if(pivot + 1 < right)
+			{
+				stack.push(pivot + 1);
+				stack.push(right);
+			}
+			
+			//Left side of pivot is added to stack in order to be partitioned.
+			//It is equivalent to calling quicksort recursively.
+			if(pivot -  1> left)
+			{
+				stack.push(left);
+				stack.push(pivot - 1);
+			}
+			
+			goTime =  false;
+			
+			if(stack.empty())
+				finished = true;
+		}
+	}
+	else 
+	{
+		std::cout << "Done." << std::endl;
+	}
 }
 
 //TODO: Allow custom z axis location
@@ -178,7 +289,6 @@ void makeObjects(std::vector<int> list, float height){
 	}
 }
 
-Animation* slide;
 void init()
 {
 	//globalCamera = glm::perspective(35.0f, 1.0f, 0.01f, 200.0f); 
@@ -186,51 +296,57 @@ void init()
 	globalCamera = new Camera(ORTHOGRAPHIC, ortho);
 	globalCamera->moveTo(glm::vec3(1.0f, 1.0f, 1.0f));
 	//Questions: Should length of array be limited?
-	std::vector<int> unsorted;
-	unsorted.push_back(1);
-	unsorted.push_back(4);
-	unsorted.push_back(3);
-	unsorted.push_back(2);
+	array.push_back(1);
+	array.push_back(4);
+	array.push_back(2);
+	array.push_back(5);
+	array.push_back(9);
+	array.push_back(3);
+	array.push_back(7);
 
+	right = array.size() - 1;
+	stack.push(left);
+	stack.push(right);
 	glGenVertexArrays(50, vao);
-	for(auto i = unsorted.begin(); i < unsorted.end(); i++){
+	for(auto i = array.begin(); i < array.end(); i++){
 		// this is really only necessary for picking, switch to one shader later
 		shaderPrograms.push_back(Angel::InitShader("vshader.glsl", "fshader.glsl"));
 	}
-	makeObjects(unsorted, .75f);
-	slide = new Animation (Animation::POSITION);
-	glm::vec3 center = objects.at(0)->getCenter();
-	std::cout << "Current x " << center.x << "current y " << center.y;
-	slide->setStart(objects.at(0), center);
-	slide->setGoal(glm::vec3(center.x, center.y, .25f), 200);
-	animationSwap(0, 1);
+	makeObjects(array, .75f);
 	/*test deletion
 	objects.clear();
-	std::sort(unsorted.begin(), unsorted.end());
+	std::sort(array.begin(), array.end());
 	vaoIndex = 0;
-	makeObjects(unsorted, .75f);
+	makeObjects(array, .75f);
 	*/
 	glPolygonMode(GL_FRONT, GL_FILL);
 	glClearColor(1.0, 1.0, 1.0, 1.0);
 }
 
 //---------Glut Callback Functions------------
+
+
 void display()
 {
+	int time = glutGet(GLUT_ELAPSED_TIME);
 	if(currentLighting != prevLighting){
 		for(auto i = objects.begin(); i < objects.end(); i++)
 			(*i)->setLighting(currentLighting, currSpecular);
 		prevLighting = currentLighting;
 	}
+	updateAnimations(time);
+	
+	if(animations.size() == 0 && !finished){
+		//partitionAnimationStep(0, array.size() - 1, step++, scanner);
+		quickSortStep(left, right, step, scanner);
+	}
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
 	glClearDepth(1.0);
-	int time = glutGet(GLUT_ELAPSED_TIME);
-	//slide->update(time);
-	updateAnimations(time);
+	
 	for(auto i = objects.begin(); i < objects.end(); i++){
-		//(*i)->update(time);
 		(*i)->draw();
 	}
+
 	TwDraw();
 	glutSwapBuffers();
 	glutPostRedisplay();
@@ -281,7 +397,6 @@ void mouseSelect(int button, int state, int x, int y){
 			//iniitalize "previous"
 			winCoordsOld = glm::vec3(prevX, prevY, depth);
 			objCoordsOld = globalCamera->windowToWorld(winCoordsOld, viewPort);
-
 			viewPort = glm::vec4(0.0f, 0.0f, winWidth, winHeight);
 		}
 		//Restore lighting.
