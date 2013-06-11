@@ -48,8 +48,9 @@ Implementation To Do:
 4. Implement recursion
 	Steps
 	a) Once partition animation finishes, call quicksort step again
-5. Mark pivot point
-
+5. Mark pivot point. Somehow make it obvious that everything to the left is less than it, everything to right is greater.
+6. Get Pausing working
+7. Get camera movement with top view.
 Remarks:
 Each object doesn't need its own shader. Even for picking, you can just pass in color id in draw loop.
 Each object /really/ doesn't need its own camera. Note that having only one camera would save memory and 

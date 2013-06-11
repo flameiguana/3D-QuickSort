@@ -325,6 +325,7 @@ Mesh::Mesh(const std::string &coords, const std::string &polys){
 Mesh::Mesh(std::vector<glm::vec3> &vertices){
 	setColorID();
 	smartPolys = false;
+
 	rawVerts = vertices;
 	for(int i = 0; i < vertices.size(); i++){
 
@@ -435,6 +436,7 @@ void Mesh::createGLBuffer(bool smooth, GLuint* vao, int index){
 void Mesh::setupShader(GLuint& _program, Camera* camera_){
 	currentShading = FLAT;
 	this->camera = camera_;
+	wireframe = false;
 	glBindVertexArray(vao[vaoIndex]);
 	glUseProgram(_program);
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
@@ -504,6 +506,11 @@ void Mesh::setupShader(GLuint& _program, Camera* camera_){
 
 
 void Mesh::draw(){
+	if(wireframe)
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	else
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
 	glBindVertexArray(vao[vaoIndex]);
 	glUseProgram(program);
 	glUniformSubroutinesuiv(GL_VERTEX_SHADER, 2, subroutines);

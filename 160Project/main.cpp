@@ -72,6 +72,17 @@ std::list<Animation> animations;
 std::vector<int> array;
 std::stack<int> stack;
 
+//Make this fancier later on.
+void focus(int a, int b){
+	for(int i = 0; i < objects.size(); i++){
+		if(i >= a && i <= b)
+			objects.at(i)->setWireframe(false);
+		else
+			objects.at(i)->setWireframe(true);
+	}
+}
+
+
 void updateAnimations(int time){
 	auto i = animations.begin();
 	//dont want to call update on the linked animations.
@@ -213,6 +224,8 @@ int pivot;
 
 void quickSortStep(int& left, int& right, int& step, int& scanner){
 
+	//This is equivalent to while !stack.empty(), but it would be bad to check while partition
+	//animation is in progress.
 	if(!finished){
 
 		if(!havePopped){
@@ -221,6 +234,7 @@ void quickSortStep(int& left, int& right, int& step, int& scanner){
 			left = stack.top();
 			stack.pop();
 			scanner = left; //Start partition function's scanner at 0
+			focus(left, right);
 			havePopped = true;
 		}
 
@@ -307,6 +321,7 @@ void init()
 	right = array.size() - 1;
 	stack.push(left);
 	stack.push(right);
+
 	glGenVertexArrays(50, vao);
 	for(auto i = array.begin(); i < array.end(); i++){
 		// this is really only necessary for picking, switch to one shader later
@@ -509,7 +524,7 @@ void TW_CALL SetWireFrameCB(const void *value, void *clientData){
 	(void)clientData;
 	wireframeMenuValue = *(const int *)value;
 	if( wireframeMenuValue!= 0 ) {
-		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		 
 	}
 	else{
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);

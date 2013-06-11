@@ -71,7 +71,7 @@ public:
 	void setupShader(GLuint& program, Camera* camera);
 	glm::vec4 getSize(){return size;}
 	glm::vec3 getCenter(){return currentCenter;}
-
+	void setWireframe(bool value){wireframe = value;}
 	//TODO
 //	void addAnimation(Animation* animation_);
 	//do we need time parameter? possibly
@@ -100,6 +100,7 @@ public:
 private:
 
 	Camera* camera;
+	bool wireframe;
 	class Vertex;
 	class Polygon;
 	class BBox;
