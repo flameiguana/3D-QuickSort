@@ -4,22 +4,15 @@
 void QuickSortVisual::makeObjects(float height){
 	float startingX = -.5f;
 	float positionY = -.5f;
-	boxWidth =  1.0f/array.size()/2.0f;
 	float margin = boxWidth/2.0f;
 	//get max value
-	float yScale = height/(*std::max_element(array.begin(), array.end())); //height over the max
 	for(int i = 0; i < array.size(); i++){
 		float x = startingX + boxWidth*.5f +  margin*(i+1) + boxWidth*i;
 		//Allow custom objects?
-		Mesh* box;
-		if(i == 0)
-			box = new Mesh("cube.coor", "cube.poly", true);
-		else 
-			box = new Mesh("cube.coor", "cube.poly");
-
+		Mesh* box = new Mesh("cube.coor", "cube.poly");
 		box->calculateNormals();
 		box->createGLBuffer(false, vao, vaoIndex);
-		box->setupShader(shaderPrograms[vaoIndex], camera);
+		box->setupShader(shaderPrograms[i], camera);
 		box->removeBoundingBox();
 		//scale, translate new height/2 on y axis. Perhaps need to update dimensions after scale.
 		box->scaleCenter(glm::vec3(boxWidth, array.at(i)*yScale, boxWidth));
@@ -30,8 +23,21 @@ void QuickSortVisual::makeObjects(float height){
 	}
 }
 
-void QuickSortVisual::moveComparePointer(int location){
-	
+void QuickSortVisual::moveCompareIndicator(int location, bool animated)
+{
+
+	glm::vec3 goalPosition = objects.at(location)->getCenter();
+	goalPosition.y +=  objects.at(location)->getSize().y*.5f + boxWidth;
+	Animation move(Animation::POSITION);
+
+	if(!animated){
+		compareIndicator->moveTo(goalPosition);
+		return;
+	}
+
+	move.setStart(compareIndicator, compareIndicator->getCenter());
+	move.setGoal(goalPosition, animationDuration * 1.5f, Animation::ELASTIC_OUT);
+	animations.push_back(move);
 }
 
 QuickSortVisual::QuickSortVisual(std::vector<int> values, Camera* camera):camera(camera){
@@ -48,16 +54,28 @@ QuickSortVisual::QuickSortVisual(std::vector<int> values, Camera* camera):camera
 	myTime = 0;
 	lastTime = 0;
 	glGenVertexArrays(50, vao);
+	//Compute various dimensions
+	height = .75f;
+	yScale = height/(*std::max_element(array.begin(), array.end())); //height over the max
+	boxWidth =  1.0f/array.size()/2.0f;
 
-	shaderPrograms.push_back(Angel::InitShader("textured.vert", "textured.frag"));
-	for(auto i = array.begin() + 1; i < array.end(); i++){
+	GLuint texturedShader = Angel::InitShader("textured.vert", "textured.frag");
+	compareIndicator = new Mesh("cube.coor", "cube.poly", true);
+	compareIndicator->calculateNormals();
+	compareIndicator->createGLBuffer(false, vao, vaoIndex++);
+	compareIndicator->loadTexture("indicator.png");
+	compareIndicator->setupShader(texturedShader, camera);
+	compareIndicator->removeBoundingBox();
+
+	compareIndicator->scaleCenter(glm::vec3(boxWidth, boxWidth, boxWidth));
+	
+	for(auto i = array.begin(); i < array.end(); i++){
 		// this is really only necessary for picking, switch to one shader later
 		shaderPrograms.push_back(Angel::InitShader("vshader.vert", "fshader.frag"));
 	}
 
-	makeObjects(.75f);
-
-	objects.at(0)->loadTexture("indicator.png");
+	makeObjects(height);
+	moveCompareIndicator(0, false);
 
 	//Initialize quicksort algoritmn
 	right = array.size() - 1;
@@ -83,9 +101,9 @@ void QuickSortVisual::markPivot(int i){
 void QuickSortVisual::focus(int a, int b){
 	for(int i = 0; i < objects.size(); i++){
 		if(i >= a && i <= b)
-			objects.at(i)->setWireframe(false);
+			objects.at(i)->setAlpha(1.0f);
 		else
-			objects.at(i)->setWireframe(true);
+			objects.at(i)->setAlpha(.5f);
 	}
 }
 
@@ -140,12 +158,13 @@ void QuickSortVisual::swapAnimation(int a, int b){
 	animations.push_back(offsetB);
 }
 
-
 //this will only be called when animation queue is empty;
 int QuickSortVisual::partitionAnimationStep(int left, int right, int step, int& scanner, int pivotIndex){
-	//assume right = pivot
+	
+	markPivot(pivotIndex);
+	moveCompareIndicator(scanner);
 	if(step == -1){
-		markPivot(pivotIndex);
+		
 		swap(pivotIndex, right);
 		swapAnimation(pivotIndex, right);
 		return scanner;
@@ -155,6 +174,7 @@ int QuickSortVisual::partitionAnimationStep(int left, int right, int step, int& 
 	int i = left + step;
 	if(i < right){
 		std::cout << "Check if scanner <= pivotValue. " << std::endl;
+
 		if(array.at(i) <= pivotValue){
 			//highlight swapped ones
 			//if i == scanner, don't do swap animation
@@ -162,6 +182,7 @@ int QuickSortVisual::partitionAnimationStep(int left, int right, int step, int& 
 			std::cout << "Swapping array[" << i << "] with array[" << scanner <<"]" << std::endl;
 			swap(i, scanner);
 			scanner++;
+			
 		}
 	}
 	//i == rightfi
@@ -188,7 +209,11 @@ void QuickSortVisual::quickSortStep(int& left, int& right, int& step, int& scann
 		}
 		if(step == -1){
 			//get a random pivot
-			pivotIndex = left + (std::rand() % (right - left + 1));
+			//pivotIndex = left + (std::rand() % (right - left + 1));
+			//For simplicity, always pick rightmost as pivot
+			pivotIndex = right;
+			//if we put back random, get rid of this
+			step++;
 		}
 		//This means that partitionAnimation has finished.
 		if(step > right - left){ //the extra step is for first pivot switch
@@ -260,7 +285,6 @@ void QuickSortVisual::updateAnimations(int time){
 	animations.splice(animations.begin(), links);
 }
 
-
 void QuickSortVisual::update(int realTime){
 	if(!paused){
 		// Allows us to continue animation were we left of.
@@ -275,6 +299,8 @@ void QuickSortVisual::update(int realTime){
 
 
 void QuickSortVisual::draw(){
+
+	compareIndicator->draw();
 	for(auto i = objects.begin(); i < objects.end(); i++){
 		(*i)->draw();
 	}

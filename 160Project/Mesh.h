@@ -58,7 +58,7 @@ public:
 	void scale(float scaling);
 	void zoom(float zoomFactor);
 	void moveCamera(glm::vec3& offset);
-	//too specific of a function, but itll do. 
+//too specific of a function, but itll do.
 	void anchorBottom();
 	void scaleCenterUniform(float scaling);
 	void scaleCenter(glm::vec3& scaleFactor);
@@ -66,8 +66,9 @@ public:
 	void removeBoundingBox(){drawBox = false;}
 	void setDiffuse(glm::vec4 lightDiffuse, glm::vec4 materialDiffuse);
 	void setSpecular(glm::vec4 materialDiffuse, float shininess);
+	void setAlpha(float alpha);
 	bool colorMatch(unsigned char *color);
-	void setupShader(GLuint& program, Camera* camera);
+	void setupShader(GLuint program, Camera* camera);
 
 	void loadTexture(const char *filename);
 
@@ -93,7 +94,7 @@ public:
 	GLuint vPosition, vNormal, modelView_loc, mTransformation_loc, mProjection_loc, vertexUV;
 	GLuint lightPosition_loc;
 	GLuint lightDiffuse_loc, materialDiffuse_loc;
-	GLuint lightSpecular_loc, materialSpecular_loc, shininess_loc;
+	GLuint lightSpecular_loc, materialSpecular_loc, shininess_loc, alpha_loc;
 
 	/* Uniform Variables*/
 	glm::mat4 mTransformation;

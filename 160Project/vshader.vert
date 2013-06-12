@@ -15,7 +15,7 @@ uniform vec4 LightPosition;
 uniform vec4 colorID;
 uniform vec4 LightDiffuse;
 uniform float Shininess;
-
+uniform float Alpha;
 out vec4 color;
 
 subroutine vec4 colorType(mat4 ModelView_);
@@ -53,7 +53,7 @@ vec4 normalMode(mat4 ModelView_){
 		specular =  LightSpecular * MaterialSpecular * Ks;
 	}
 
-	return vec4((specular + diffuse + ambient).xyz, 1.0 );
+	return vec4((specular + diffuse + ambient).xyz, Alpha);
 }
 
 subroutine(colorType)

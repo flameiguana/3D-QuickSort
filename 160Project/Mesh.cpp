@@ -433,7 +433,7 @@ void Mesh::createGLBuffer(bool smooth, GLuint* vao, int index){
 	sizeofTCoords = 0;
 	if(isTextured)
 		sizeofTCoords = textureCoords.size()*sizeof(glm::vec2);
-	
+
 	glGenBuffers(1, &vertexBuffer);
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeofVertices + sizeofNormals + sizeofTCoords, NULL, GL_DYNAMIC_DRAW);
@@ -447,7 +447,7 @@ void Mesh::createGLBuffer(bool smooth, GLuint* vao, int index){
 	else{
 		glBufferSubData(GL_ARRAY_BUFFER, sizeofVertices, sizeofNormals, surfaceNormals.data());		
 	}
-	
+
 	if(isTextured){
 		glBufferSubData(GL_ARRAY_BUFFER, sizeofNormals + sizeofVertices, sizeofTCoords, textureCoords.data());
 	}
@@ -458,7 +458,7 @@ void Mesh::createGLBuffer(bool smooth, GLuint* vao, int index){
 }
 
 //Should pass in names as parameters.
-void Mesh::setupShader(GLuint& _program, Camera* camera_){
+void Mesh::setupShader(GLuint _program, Camera* camera_){
 	currentShading = FLAT;
 	this->camera = camera_;
 	wireframe = false;
@@ -474,10 +474,10 @@ void Mesh::setupShader(GLuint& _program, Camera* camera_){
 
 	const float maxValue = 255.0;
 	//This stuff is hard coded.-------------
-	glm::vec4 materialAmbient(.3, .3, .3, .2);
+	glm::vec4 materialAmbient(.3f, .3f, .3f, 1.0f);
 	materialSpecular = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 
-	glm::vec4 lightAmbient(0.0f, 0.0f, 0.0f, 0.0f);
+	glm::vec4 lightAmbient(0.0f, 0.0f, 0.0f, 1.0f);
 	lightSpecular = glm::vec4 (1.0f, 1.0f, 1.0f, 1.0f); //A bright red specular color
 	lightDiffuse = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f); //white
 
@@ -495,6 +495,8 @@ void Mesh::setupShader(GLuint& _program, Camera* camera_){
 	materialSpecular_loc = glGetUniformLocation(_program, "MaterialSpecular");
 	lightPosition_loc = glGetUniformLocation(_program, "LightPosition");
 	shininess_loc = glGetUniformLocation(_program, "Shininess");
+	alpha_loc = glGetUniformLocation(_program, "Alpha");
+
 	GLuint colorID_loc = glGetUniformLocation(_program, "colorID");
 	//Set uniform variables
 	glUniform4fv(ambientProduct_loc, 1, glm::value_ptr(ambientProduct));
@@ -508,7 +510,7 @@ void Mesh::setupShader(GLuint& _program, Camera* camera_){
 	glUniform4fv(lightPosition_loc, 1, glm::value_ptr(lightPosition));
 	glUniform4fv(colorID_loc, 1, glm::value_ptr(glm::vec4(colorID[0]/255.0f, colorID[1]/255.0f, colorID[2]/255.0f, 1.0f)));
 	glUniform1f(shininess_loc, shininess);
-
+	glUniform1f(alpha_loc, 1.0f);
 	//Set up pointers to subroutines in shader.
 	normalModeIndex = glGetSubroutineIndex(_program, GL_VERTEX_SHADER, "normalMode");
 	colorKeyIndex = glGetSubroutineIndex(_program, GL_VERTEX_SHADER, "colorKeyMode");
@@ -541,11 +543,15 @@ void Mesh::setSpecular(glm::vec4 materialDiffuse, float shininess){
 	glUniform4fv(materialSpecular_loc, 1, glm::value_ptr(materialSpecular));
 	glUniform1f(shininess_loc, shininess);
 }
+
+void Mesh::setAlpha(float alpha){
+	glUseProgram(program);
+	glUniform1f(alpha_loc, alpha);
+}
 /*
   http://www.opengl.org/discussion_boards/showthread.php/163929-image-loading?p=1158293#post1158293
 */
 void Mesh::loadTexture(const char *filename){
-	isTextured = true;
 	FREE_IMAGE_FORMAT format = FreeImage_GetFileType(filename, 0);
 	FIBITMAP* image = FreeImage_Load(format, filename);
  
@@ -582,7 +588,6 @@ void Mesh::loadTexture(const char *filename){
 		std::cout<<"There was an error loading the texture"<< std::endl;
 	}
 }
-
 
 /*
 	Handles animations.

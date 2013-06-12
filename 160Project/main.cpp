@@ -277,7 +277,9 @@ int main(int argc, char **argv)
 	//glutCreateMenu(NULL);
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
+	//Allows alpha transparency blending
 	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable (GL_TEXTURE_2D);
 	glewExperimental = GL_TRUE;
 	glewInit();
@@ -291,7 +293,6 @@ int main(int argc, char **argv)
 	//TwGLUTModifiersFunc(glutGetModifiers);
 	glutReshapeFunc(reshape);
 	
-
 	//Initialize AntTweakBar
 	TwInit(TW_OPENGL, NULL);
 	TwBar* bar = TwNewBar("OptionBar");

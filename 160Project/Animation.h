@@ -23,7 +23,7 @@ public:
 	//Typically 0,0,0 if object is untranslated.
 	//1.0, 1.0f, 1.0f if object is unscaled.
 	//0, 0, 0 if object is unrotated.
-	//Pass in current center if moving to an absolute position
+	//Pass in current center if moving to an absolute position.
 	void setStart(Mesh* mesh, glm::vec3& start);
 	//Enter final scale, rotation (degrees), or position
 	void setGoal(glm::vec3& goal, float duration, EasingType easing = LINEAR);
@@ -32,10 +32,12 @@ public:
 
 	void chain(Animation& animation);
 
-	bool hasEnded() { return ended;}
+	bool hasEnded() {return ended;}
 	bool containsLink() {return hasLink;}
 	Animation* getLink(){ return nextLink;}
+
 	~Animation();
+
 private:
 	glm::vec3 calculateStep(float t);
 	AnimationType animationType;

@@ -27,14 +27,14 @@ private:
 
 	/*3D variables*/
 	Camera* camera;
-	Mesh* comparePointer;
-	float boxWidth;
+	Mesh* compareIndicator;
+	float boxWidth, height, yScale;
 	GLuint vao[50];
 	std::vector<GLuint> shaderPrograms;
 	int vaoIndex;
 
 	//a unit of animation, can use this to dynamically change animation speed depending on distance traveled
-	int animationDuration;
+	float animationDuration;
 	int lastTime, myTime;
 	int pivotIndex;
 	bool paused;
@@ -44,7 +44,7 @@ private:
 	void updateAnimations(int time);
 	void focus(int a, int b);
 	void markPivot(int pivot);
-	void moveComparePointer(int location);
+	void moveCompareIndicator(int location, bool animated = true);
 	void quickSortStep(int& left, int& right, int& step, int& scanner);
 	void makeObjects(float height);
 };
