@@ -14,6 +14,7 @@ public:
 	void update(int time);
 	void draw();
 	void setPause(bool value){paused = value;}
+	void setSpeed(float speed){animationDuration = speed;}
 	void stepOnce(){stepMode = true;}
 	std::vector<Mesh*> * getObjects(){return &objects;}
 

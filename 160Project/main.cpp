@@ -43,6 +43,9 @@ Mesh* selected;
 int pauseMenuValue = 0;
 QuickSortVisual* visualization;
 
+unsigned int speed = 900;
+unsigned int oldSpeed = 900;
+
 void display();
 
 //comparator for findmax and findmin.
@@ -54,7 +57,7 @@ void init()
 	//globalCamera = glm::perspective(35.0f, 1.0f, 0.01f, 200.0f); 
 	glm::mat4 ortho = glm::ortho(-0.5f, 0.5f, -0.5f, 0.5f, 0.01f, 100.0f);
 	globalCamera = new Camera(ORTHOGRAPHIC, ortho);
-	globalCamera->moveTo(glm::vec3(1.0f, 1.0f, 1.0f));
+	globalCamera->moveTo(glm::vec3(1.0f, 1.0f, .8f));
 	//Questions: Should length of array be limited?
 	std::vector<int> array;
 	for(int i = 0; i < nummberOfElements; i++){
@@ -77,6 +80,9 @@ void display()
 		prevLighting = currentLighting;
 	}
 	visualization->update(time);
+	if(speed != oldSpeed){
+		visualization->setSpeed(speed);
+	}
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
 	glClearDepth(1.0);
@@ -270,6 +276,8 @@ void TW_CALL GetPauseCB(void *value, void *clientData){
 
 int main(int argc, char **argv)
 {
+	std::cout << "Welcome to the 3D QuickSort Prototype.\nEnter the size of your randomly generated array." <<std::endl;
+	std::cin >> nummberOfElements;
 	srand ( unsigned ( std::time(0) ) );
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH);
@@ -308,6 +316,7 @@ int main(int argc, char **argv)
 		TwAddVarRW(bar, "Lighting", lightingEnum, &currentLighting, " keyIncr=',' keyDecr='.' help='Select Lighting Type.' ");
 	}
 	*/
+	TwAddVarRW(bar, "Animation Time", TW_TYPE_UINT32, &speed, " min=1 key='+' ");
 
 	init();
 	glutMainLoop();

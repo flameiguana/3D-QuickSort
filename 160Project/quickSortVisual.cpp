@@ -38,7 +38,7 @@ void QuickSortVisual::moveCompareIndicator(int original, int destination,  bool 
 		return;
 	}
 	Animation move(Animation::POSITION);
-	float travelTime = animationDuration* std::abs(original - destination);
+	float travelTime = animationDuration* std::abs(original - destination)*.60f;
 	move.setStart(compareIndicator, compareIndicator->getCenter());
 	move.setGoal(goalPosition, travelTime, Animation::ELASTIC_OUT);
 	animations.push_back(move);
@@ -59,11 +59,11 @@ void QuickSortVisual::moveIndexIndicator(int location, bool delay, bool animated
 	}
 	//float travelTime = animationDuration* std::abs(a - b)*.75f;
 	move.setStart(indexIndicator, indexIndicator->getCenter());
-	move.setGoal(goalPosition, animationDuration, Animation::QUAD_OUT);
+	move.setGoal(goalPosition, animationDuration*.6f, Animation::QUAD_OUT);
 	if(delay){
 		Animation dummy(Animation::POSITION);
 		dummy.setStart(blank, blank->getCenter());
-		dummy.setGoal(blank->getCenter(), animationDuration, Animation::NONE);
+		dummy.setGoal(blank->getCenter(), animationDuration*.6f, Animation::NONE);
 		move.chain(dummy);
 	}
 	animations.push_back(move);
@@ -71,7 +71,7 @@ void QuickSortVisual::moveIndexIndicator(int location, bool delay, bool animated
 
 QuickSortVisual::QuickSortVisual(std::vector<int> values, Camera* camera):camera(camera){
 	array = values;
-	animationDuration = 1000;
+	animationDuration = 900;
 	poppedStack = false;
 	havePivot = false;
 	finished = false;
@@ -163,7 +163,7 @@ void QuickSortVisual::focus(int a, int b){
 		else{
 			Animation changeAlpha(Animation::TRANSPARENCY);
 			changeAlpha.setStart(objects.at(i), glm::vec3(objects.at(i)->getAlpha()));
-			changeAlpha.setGoal(glm::vec3(.5f), animationDuration*.75, Animation::LINEAR);
+			changeAlpha.setGoal(glm::vec3(.4f), animationDuration*.75, Animation::LINEAR);
 			animations.push_back(changeAlpha);
 			//objects.at(i)->setAlpha(.5f);
 		}
@@ -186,14 +186,14 @@ void QuickSortVisual::swapAnimation(int a, int b){
 	glm::vec3 bPosition = objects.at(b)->getCenter();
 	float z = aPosition.z;
 	//Movement depends on how far things are.
-	float travelTime = animationDuration* std::abs(a - b)*.75f;
+	float travelTime = animationDuration* std::abs(a - b)*.6f;
 	Animation offsetA(Animation::POSITION);
 	offsetA.setStart(meshA, aPosition);
 	offsetA.setGoal(glm::vec3(aPosition.x, aPosition.y, z + boxWidth), animationDuration/2);
 	
 	Animation switchA(Animation::POSITION);
 	switchA.setStart(meshA, glm::vec3(aPosition.x, aPosition.y, z + boxWidth));
-	switchA.setGoal(glm::vec3(bPosition.x, aPosition.y, z + boxWidth), travelTime);
+	switchA.setGoal(glm::vec3(bPosition.x, aPosition.y, z + boxWidth), travelTime, Animation::QUAD_OUT);
 
 	Animation returnA(Animation::POSITION);
 	returnA.setStart(meshA, glm::vec3(bPosition.x, aPosition.y, z + boxWidth));
@@ -205,7 +205,7 @@ void QuickSortVisual::swapAnimation(int a, int b){
 
 	Animation switchB(Animation::POSITION);
 	switchB.setStart(meshB, glm::vec3(bPosition.x, bPosition.y, z - boxWidth));
-	switchB.setGoal(glm::vec3(aPosition.x, bPosition.y, z - boxWidth), travelTime);
+	switchB.setGoal(glm::vec3(aPosition.x, bPosition.y, z - boxWidth), travelTime, Animation::QUAD_OUT);
 
 	Animation returnB(Animation::POSITION);
 	returnB.setStart(meshB, glm::vec3(aPosition.x, bPosition.y, z - boxWidth));

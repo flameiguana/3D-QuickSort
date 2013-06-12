@@ -475,7 +475,7 @@ void Mesh::setupShader(GLuint _program, Camera* camera_){
 
 	const float maxValue = 255.0;
 	//This stuff is hard coded.-------------
-	glm::vec4 materialAmbient(.5f, .5f, .5f, 1.0f);
+	glm::vec4 materialAmbient(.4f, .4f, .4f, 1.0f);
 	materialSpecular = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 
 	glm::vec4 lightAmbient(0.5f, 0.5f, 0.5f, 1.0f);
@@ -485,7 +485,7 @@ void Mesh::setupShader(GLuint _program, Camera* camera_){
 	shininess = .25f* 128.0f;
 	//To get diffuse lighting, calculate angle of each triangle.
 	//So get the surface normal of every three points.
-	glm::vec4 ambientProduct = lightAmbient * materialAmbient;
+	glm::vec4 ambientProduct = lightAmbient * materialAmbient; 
 
 	//Get uniform variable locations.
 	lightDiffuse_loc = glGetUniformLocation(_program, "LightDiffuse");
