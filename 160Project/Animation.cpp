@@ -20,13 +20,21 @@ glm::vec3 Animation::calculateStep(float t){
 	{
 		case LINEAR:
 			return changeInValue * (t/duration) + start;
-		case ELASTIC_OUT: //From Robert Penning's easing functions
-			if (t == 0.0f) return start;
-			if ((t /= duration) == 1.0f) return start + changeInValue;  
-			float p = duration * .3f;
-			glm::vec3 a = changeInValue; 
-			float s = p / 4;
-			return (a * (float)pow(2, -10 * t) * (float)sin( (t * duration - s) * (2 * PI)/ p ) + changeInValue + start);	
+		case ELASTIC_OUT:
+			{//From Robert Penning's easing functions
+				if (t == 0.0f) return start;
+				if ((t /= duration) == 1.0f) return start + changeInValue;  
+				float p = duration * .3f;
+				glm::vec3 a = changeInValue; 
+				float s = p / 4;
+				return (a * (float)pow(2, -10 * t) * (float)sin( (t * duration - s) * (2 * PI)/ p ) + changeInValue + start);
+			}
+		case QUAD_OUT:
+			return -changeInValue * (t /= duration) * (t - 2) + start;
+		case SINE_OUT:
+			return changeInValue * (float) sin(t/duration * (PI/2.0f)) + start;
+		case NONE:
+			return goal;
 	}
 	//linear interpolation (y = mx + b)
 	/*
@@ -52,19 +60,21 @@ void Animation::update(int time){
 		return;
 	}
 
-	glm::vec3 step = calculateStep(difference);
 	switch(animationType){
 		case TRANSLATE:
-			mesh->translate(step);
+			mesh->translate(calculateStep(difference));
 			break;
 		case ROTATE:
-			mesh->rotateSelf(step);
+			mesh->rotateCenteredTo(calculateStep(difference));
 			break;
 		case SCALE:
-			mesh->scaleCenter(step);
+			mesh->scaleCenter(calculateStep(difference));
 			break;
 		case POSITION:
-			mesh->moveTo(step);
+			mesh->moveTo(calculateStep(difference));
+			break;
+		case TRANSPARENCY: //only the first value is taken into account
+			mesh->setAlpha(calculateStep(difference).x);
 			break;
 	}
 }

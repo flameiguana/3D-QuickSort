@@ -34,7 +34,7 @@ typedef enum {NORMAL_MODE = 1, COLOR_ID} LightingType;
 class Mesh
 {
 public:
-	Mesh(const std::string &coords, const std::string &polys, bool isTextured = false);
+	Mesh(const char *coords, const char* polys, bool isTextured = false);
 	Mesh(std::vector<glm::vec3> &vertices);
 	void calculateNormals();
 	std::vector<glm::vec3> getRawVertices(){return rawVerts;}
@@ -49,10 +49,10 @@ public:
 
 	void translate(glm::vec3& offset);
 	void rotateSelf(glm::vec3& offset, bool positive=true);
+	void rotateCenteredTo(glm::vec3& rotations, bool positive = true);
 	void translateOrigin();
 	void translateBack();
 
-	void absoluteTranslate(glm::vec3& position);
 	void moveTo(glm::vec3& point);
 	void rotate(glm::vec3& rotations, bool positive = true);
 	void scale(float scaling);
@@ -64,9 +64,10 @@ public:
 	void scaleCenter(glm::vec3& scaleFactor);
 	void drawBoundingBox(){drawBox = true;}
 	void removeBoundingBox(){drawBox = false;}
-	void setDiffuse(glm::vec4 lightDiffuse, glm::vec4 materialDiffuse);
+	void setDiffuse(glm::vec4 materialDiffuse);
 	void setSpecular(glm::vec4 materialDiffuse, float shininess);
 	void setAlpha(float alpha);
+	float getAlpha(){return alpha;}
 	bool colorMatch(unsigned char *color);
 	void setupShader(GLuint program, Camera* camera);
 
@@ -121,7 +122,7 @@ private:
 	glm::vec4 lightPosition;
 	glm::vec4 lightSpecular;
 	glm::vec4 materialSpecular;
-	float shininess;
+	float shininess, alpha;
 
 	glm::mat4 mTranslation;
 	glm::mat4 mRotation;

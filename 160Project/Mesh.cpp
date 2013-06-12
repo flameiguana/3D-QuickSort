@@ -194,7 +194,7 @@ bool Mesh::colorMatch(unsigned char *color){
 }
 
 //Note, polygons have variable number of vertices.
-Mesh::Mesh(const std::string &coords, const std::string &polys, bool isTextured){
+Mesh::Mesh(const char *coords, const char *polys, bool isTextured){
 	//TODO Create bounding box.
 	//Calculate middle point
 	//Stick vertices into same buffer.
@@ -206,7 +206,8 @@ Mesh::Mesh(const std::string &coords, const std::string &polys, bool isTextured)
 	//load the vertices. they are in order
 	std::ifstream file;
 	std::string unused;
-	file.open(coords.c_str());
+
+	file.open(coords);
 	int totalVerts;
 	int indexNum;
 	float x, y, z;
@@ -252,7 +253,7 @@ Mesh::Mesh(const std::string &coords, const std::string &polys, bool isTextured)
 	currentCenter = center;
 	file.close();
 	//Load the polygons
-	file.open(polys.c_str());
+	file.open(polys);
 	int totalPolys;
 	std::string section;
 	std::string sectionPrev;
@@ -477,7 +478,7 @@ void Mesh::setupShader(GLuint _program, Camera* camera_){
 	glm::vec4 materialAmbient(.3f, .3f, .3f, 1.0f);
 	materialSpecular = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 
-	glm::vec4 lightAmbient(0.0f, 0.0f, 0.0f, 1.0f);
+	glm::vec4 lightAmbient(0.5f, 0.5f, 0.5f, 1.0f);
 	lightSpecular = glm::vec4 (1.0f, 1.0f, 1.0f, 1.0f); //A bright red specular color
 	lightDiffuse = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f); //white
 
@@ -496,8 +497,8 @@ void Mesh::setupShader(GLuint _program, Camera* camera_){
 	lightPosition_loc = glGetUniformLocation(_program, "LightPosition");
 	shininess_loc = glGetUniformLocation(_program, "Shininess");
 	alpha_loc = glGetUniformLocation(_program, "Alpha");
-
 	GLuint colorID_loc = glGetUniformLocation(_program, "colorID");
+
 	//Set uniform variables
 	glUniform4fv(ambientProduct_loc, 1, glm::value_ptr(ambientProduct));
 	glUniform4fv(lightDiffuse_loc, 1, glm::value_ptr(lightDiffuse));
@@ -510,12 +511,13 @@ void Mesh::setupShader(GLuint _program, Camera* camera_){
 	glUniform4fv(lightPosition_loc, 1, glm::value_ptr(lightPosition));
 	glUniform4fv(colorID_loc, 1, glm::value_ptr(glm::vec4(colorID[0]/255.0f, colorID[1]/255.0f, colorID[2]/255.0f, 1.0f)));
 	glUniform1f(shininess_loc, shininess);
-	glUniform1f(alpha_loc, 1.0f);
+	alpha = 1.0f;
+	glUniform1f(alpha_loc, alpha);
 	//Set up pointers to subroutines in shader.
 	normalModeIndex = glGetSubroutineIndex(_program, GL_VERTEX_SHADER, "normalMode");
 	colorKeyIndex = glGetSubroutineIndex(_program, GL_VERTEX_SHADER, "colorKeyMode");
 
-	subroutines[0] = normalModeIndex; //default is diffuse
+	subroutines[0] = normalModeIndex;
 
 	mTransformation_loc = glGetUniformLocation(_program, "mTransformation");
 	modelView_loc = glGetUniformLocation(_program, "ModelView");
@@ -527,25 +529,30 @@ void Mesh::setupShader(GLuint _program, Camera* camera_){
 }
 
 
-void Mesh::setDiffuse(glm::vec4 lightDiffuse, glm::vec4 materialDiffuse){
-	this->lightDiffuse = lightDiffuse;
+void Mesh::setDiffuse(glm::vec4 materialDiffuse){
 	this->materialDiffuse = materialDiffuse;
 	//Pass to shader.
+	glBindVertexArray(vao[vaoIndex]);
+	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
 	glUseProgram(program);
-	glUniform4fv(lightDiffuse_loc, 1, glm::value_ptr(lightDiffuse));
 	glUniform4fv(materialDiffuse_loc, 1, glm::value_ptr(materialDiffuse));
 }
 
 void Mesh::setSpecular(glm::vec4 materialDiffuse, float shininess){
 	this->materialSpecular = materialSpecular;
 	this->shininess = shininess;
+	glBindVertexArray(vao[vaoIndex]);
 	glUseProgram(program);
+	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
 	glUniform4fv(materialSpecular_loc, 1, glm::value_ptr(materialSpecular));
 	glUniform1f(shininess_loc, shininess);
 }
 
 void Mesh::setAlpha(float alpha){
+	this->alpha = alpha;
+	glBindVertexArray(vao[vaoIndex]);
 	glUseProgram(program);
+	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
 	glUniform1f(alpha_loc, alpha);
 }
 /*
@@ -564,8 +571,8 @@ void Mesh::loadTexture(const char *filename){
  
 	GLubyte* texture = new GLubyte[4*w*h];
 	char* pixels = (char*)FreeImage_GetBits(image);
+
 	//FreeImage loads in BGR format, so you need to swap some bytes(Or use GL_BGR).
- 
 	for(int j= 0; j< w * h; j++){
 		texture[j * 4 + 0] = pixels[j * 4 + 2];
 		texture[j * 4 + 1] = pixels[j * 4 + 1];
@@ -663,16 +670,6 @@ void Mesh::translate(glm::vec3& offset){
 	currentCenter = glm::vec3(translation * glm::vec4(currentCenter, 1.0f));
 }
 
-void Mesh::absoluteTranslate(glm::vec3& offset){
-	glm::mat4 translation(1.0f);
-	//offset identity matrix
-	translation = glm::translate(translation, offset);
-	//the accumulated translation
-	mTranslation = translation * mTranslation;
-	//dont accumulate translation, just use latest
-	mTransformation = translation * mTransformation;
-	currentCenter = glm::vec3(mTranslation * glm::vec4(currentCenter, 1.0f));
-}
 
 //Move to an absolute coordinate on the map.
 void Mesh::moveTo(glm::vec3& point){
@@ -707,7 +704,7 @@ void Mesh::translateOrigin(){
 	mTransformation = mTranslation * mRotation * mScale;
 }
 
-
+//Accumulates rotation
 //Scale, translate to center, rotate new, rotate old, translate back to object origin, translate to original location
 void Mesh::rotateSelf(glm::vec3& rotations, bool positive){
 	glm::mat4 tempRotations = mRotation;
@@ -715,7 +712,17 @@ void Mesh::rotateSelf(glm::vec3& rotations, bool positive){
 	rotate(rotations, positive); //apply new rotations
 	mTransformation =  mTranslation * glm::translate(glm::mat4(1.0f), center) * tempRotations
 	 * mRotation *  mScale * glm::translate(glm::mat4(1.0f), -center);
-	mRotation = tempRotations * mRotation; //restore rotation
+	mRotation = tempRotations * mRotation; //restore rotation. this accumulates.
+}
+
+//Rotates absolutely.
+void Mesh::rotateCenteredTo(glm::vec3& rotations, bool positive){
+	glm::mat4 tempRotations = mRotation;
+	mRotation = glm::mat4(1.0f); //clear rotations
+	rotate(rotations, positive); //apply new rotations
+	mTransformation =  mTranslation * glm::translate(glm::mat4(1.0f), center) * tempRotations
+	 * mRotation *  mScale * glm::translate(glm::mat4(1.0f), -center);
+	mRotation = tempRotations;
 }
 
 //only allow uniform scaling for now

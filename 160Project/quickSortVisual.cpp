@@ -6,9 +6,11 @@ void QuickSortVisual::makeObjects(float height){
 	float positionY = -.5f;
 	float margin = boxWidth/2.0f;
 	//get max value
+
 	for(int i = 0; i < array.size(); i++){
 		float x = startingX + boxWidth*.5f +  margin*(i+1) + boxWidth*i;
 		//Allow custom objects?
+
 		Mesh* box = new Mesh("cube.coor", "cube.poly");
 		box->calculateNormals();
 		box->createGLBuffer(false, vao, vaoIndex);
@@ -23,6 +25,7 @@ void QuickSortVisual::makeObjects(float height){
 	}
 }
 
+//Moves the top block to indicate what is the last element not less than pivot.
 void QuickSortVisual::moveCompareIndicator(int location, bool animated)
 {
 
@@ -40,9 +43,26 @@ void QuickSortVisual::moveCompareIndicator(int location, bool animated)
 	animations.push_back(move);
 }
 
+void QuickSortVisual::moveIndexIndicator(int location, bool animated){
+	glm::vec3 goalPosition = objects.at(location)->getCenter();
+	goalPosition.z +=  boxWidth;
+	goalPosition.y = -.5f;
+
+	Animation move(Animation::POSITION);
+
+	if(!animated){
+		indexIndicator->moveTo(goalPosition);
+		return;
+	}
+	//float duration = 
+	move.setStart(indexIndicator, indexIndicator->getCenter());
+	move.setGoal(goalPosition, animationDuration * 1.5f, Animation::ELASTIC_OUT);
+	animations.push_back(move);
+}
+
 QuickSortVisual::QuickSortVisual(std::vector<int> values, Camera* camera):camera(camera){
 	array = values;
-	animationDuration = 700;
+	animationDuration = 800;
 	poppedStack = false;
 	havePivot = false;
 	finished = false;
@@ -52,13 +72,23 @@ QuickSortVisual::QuickSortVisual(std::vector<int> values, Camera* camera):camera
 	scanner = 0;
 	paused = false;
 	myTime = 0;
+	stepMode = false;
 	lastTime = 0;
-	glGenVertexArrays(50, vao);
+	glGenVertexArrays(55, vao);
+
 	//Compute various dimensions
 	height = .75f;
 	yScale = height/(*std::max_element(array.begin(), array.end())); //height over the max
 	boxWidth =  1.0f/array.size()/2.0f;
+	
+	for(auto i = array.begin(); i < array.end(); i++){
+		// this is really only necessary for picking, switch to one shader later
+		GLuint shader = Angel::InitShader("vshader.vert", "fshader.frag");
+		shaderPrograms.push_back(shader);
 
+	}
+	makeObjects(height);
+	
 	GLuint texturedShader = Angel::InitShader("textured.vert", "textured.frag");
 	compareIndicator = new Mesh("cube.coor", "cube.poly", true);
 	compareIndicator->calculateNormals();
@@ -66,17 +96,20 @@ QuickSortVisual::QuickSortVisual(std::vector<int> values, Camera* camera):camera
 	compareIndicator->loadTexture("indicator.png");
 	compareIndicator->setupShader(texturedShader, camera);
 	compareIndicator->removeBoundingBox();
-
 	compareIndicator->scaleCenter(glm::vec3(boxWidth, boxWidth, boxWidth));
 	
-	for(auto i = array.begin(); i < array.end(); i++){
-		// this is really only necessary for picking, switch to one shader later
-		shaderPrograms.push_back(Angel::InitShader("vshader.vert", "fshader.frag"));
-	}
+	GLuint regularShader = Angel::InitShader("vshader.vert", "fshader.frag");
+	indexIndicator = new Mesh("cube.coor", "cube.poly");
+	indexIndicator->calculateNormals();
+	indexIndicator->createGLBuffer(false, vao, vaoIndex++);
+	indexIndicator->setupShader(regularShader, camera);
+	indexIndicator->removeBoundingBox();
+	indexIndicator->scaleCenter(glm::vec3(boxWidth, boxWidth/4.0f, boxWidth));
+	indexIndicator->setDiffuse(glm::vec4(105/255.0f, 7/255.0f, 159/255.0f, 1.0f));
+	
 
-	makeObjects(height);
 	moveCompareIndicator(0, false);
-
+	moveIndexIndicator(0, false);
 	//Initialize quicksort algoritmn
 	right = array.size() - 1;
 	stack.push(left);
@@ -93,17 +126,35 @@ void QuickSortVisual::swap(int a, int b){
 }
 
 void QuickSortVisual::markPivot(int i){
+	//These are supposed to be materials for turquoise
 	objects.at(i)->setSpecular(glm::vec4(0.297254f,	0.30829f, 0.306678f, 1.0f), .1f*128.0f);
-	objects.at(i)->setDiffuse(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), glm::vec4(0.396f, 0.74151f, 0.69102f, 1.0f));
+	objects.at(i)->setDiffuse(glm::vec4(0.396f, 0.74151f, 0.69102f, 1.0f));
+	/*
+	Animation rotate(Animation::ROTATE);
+	rotate.setStart(objects.at(i), glm::vec3(0.0f, 0.0f, 0.0f));
+	rotate.setGoal(glm::vec3(0.0f, 45.0f, 0.0f), animationDuration, Animation::SINE_OUT);
+	animations.push_back(rotate);
+	*/
 }
 
 //Make this fancier later on.
 void QuickSortVisual::focus(int a, int b){
+
 	for(int i = 0; i < objects.size(); i++){
-		if(i >= a && i <= b)
-			objects.at(i)->setAlpha(1.0f);
-		else
-			objects.at(i)->setAlpha(.5f);
+		if(i >= a && i <= b){
+			//objects.at(i)->setAlpha(1.0f);
+			Animation changeAlpha(Animation::TRANSPARENCY);
+			changeAlpha.setStart(objects.at(i), glm::vec3(objects.at(i)->getAlpha()));
+			changeAlpha.setGoal(glm::vec3(1.0f), animationDuration*.75, Animation::LINEAR);
+			animations.push_back(changeAlpha);
+		}
+		else{
+			Animation changeAlpha(Animation::TRANSPARENCY);
+			changeAlpha.setStart(objects.at(i), glm::vec3(objects.at(i)->getAlpha()));
+			changeAlpha.setGoal(glm::vec3(.5f), animationDuration*.75, Animation::LINEAR);
+			animations.push_back(changeAlpha);
+			//objects.at(i)->setAlpha(.5f);
+		}
 	}
 }
 
@@ -161,10 +212,11 @@ void QuickSortVisual::swapAnimation(int a, int b){
 //this will only be called when animation queue is empty;
 int QuickSortVisual::partitionAnimationStep(int left, int right, int step, int& scanner, int pivotIndex){
 	
+	if(step == 0)
 	markPivot(pivotIndex);
 	moveCompareIndicator(scanner);
 	if(step == -1){
-		
+		markPivot(pivotIndex);
 		swap(pivotIndex, right);
 		swapAnimation(pivotIndex, right);
 		return scanner;
@@ -172,9 +224,9 @@ int QuickSortVisual::partitionAnimationStep(int left, int right, int step, int& 
 	int pivotValue = array.at(right);
 	//instead of having for loop, iterate by steps
 	int i = left + step;
+	moveIndexIndicator(i);
 	if(i < right){
 		std::cout << "Check if scanner <= pivotValue. " << std::endl;
-
 		if(array.at(i) <= pivotValue){
 			//highlight swapped ones
 			//if i == scanner, don't do swap animation
@@ -285,22 +337,39 @@ void QuickSortVisual::updateAnimations(int time){
 	animations.splice(animations.begin(), links);
 }
 
+/*
+	Step Mode logic.
+	1. When user clicks step, state should be paused.
+	2. Finish any current animations and pause again.
+*/
 void QuickSortVisual::update(int realTime){
 	if(!paused){
 		// Allows us to continue animation were we left of.
 		myTime += realTime - lastTime;  
 		updateAnimations(myTime);
 		if(animations.size() == 0 && !finished){
+			//if stepMode is still true and animation is finished
+			if(stepMode ) { 
+				paused = true;
+				stepMode = false;
+			}
 			quickSortStep(left, right, step, scanner);
+		}
+
+	}
+	else {
+		if(stepMode){
+			// finish current animations 
+			if(animations.size() > 0)
+				paused = false;
 		}
 	}
 	lastTime = realTime;
 }
 
-
 void QuickSortVisual::draw(){
-
 	compareIndicator->draw();
+	indexIndicator->draw();
 	for(auto i = objects.begin(); i < objects.end(); i++){
 		(*i)->draw();
 	}

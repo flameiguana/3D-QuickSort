@@ -2,6 +2,7 @@
 
 #include "Mesh.h"
 #include "Animation.h"
+#include "Angel.h"
 #include <vector>
 #include <stack>
 #include <list>
@@ -12,7 +13,7 @@ public:
 	void update(int time);
 	void draw();
 	void setPause(bool value){paused = value;}
-
+	void stepOnce(){stepMode = true;}
 	std::vector<Mesh*> * getObjects(){return &objects;}
 
 private:
@@ -28,8 +29,9 @@ private:
 	/*3D variables*/
 	Camera* camera;
 	Mesh* compareIndicator;
+	Mesh* indexIndicator;
 	float boxWidth, height, yScale;
-	GLuint vao[50];
+	GLuint vao[55];
 	std::vector<GLuint> shaderPrograms;
 	int vaoIndex;
 
@@ -38,6 +40,8 @@ private:
 	int lastTime, myTime;
 	int pivotIndex;
 	bool paused;
+	
+	bool stepMode;
 	void swapAnimation(int a, int b);
 	void swap(int a, int b);
 	int partitionAnimationStep(int left, int right, int step, int& scanner, int pivotIndex);
@@ -45,6 +49,7 @@ private:
 	void focus(int a, int b);
 	void markPivot(int pivot);
 	void moveCompareIndicator(int location, bool animated = true);
+	void moveIndexIndicator(int locatoin, bool animated = true);
 	void quickSortStep(int& left, int& right, int& step, int& scanner);
 	void makeObjects(float height);
 };

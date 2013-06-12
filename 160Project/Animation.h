@@ -15,8 +15,8 @@
 class Animation
 {
 public:
-	enum AnimationType {ROTATE, SCALE, TRANSLATE, POSITION};
-	enum EasingType {LINEAR, ELASTIC_OUT};
+	enum AnimationType {ROTATE, SCALE, TRANSLATE, POSITION, TRANSPARENCY};
+	enum EasingType {LINEAR, ELASTIC_OUT, QUAD_OUT, SINE_OUT, NONE};
 	Animation(AnimationType type);
 
 	//Pass in the initial values, read from somewhere.

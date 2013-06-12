@@ -165,7 +165,8 @@ void keyboard(unsigned char key, int x, int y)
 	if(!TwEventKeyboardGLUT(key, x, y)){
 		switch (key) {
 		case 's':
-			currentTransform = SCALE;
+			//currentTransform = SCALE;
+			visualization->stepOnce();
 			break;
 		case 't':
 			currentTransform = TRANSLATE;
@@ -219,7 +220,7 @@ void activeMouse(int x, int y){
 						objCoordsNew = globalCamera->windowToWorld(winCoordNew, viewPort);
 						// std::cout << "xPrev: " << prevX << ", " << prevY << std::endl;
 						// std::cout << objCoordsNew.x << " " << objCoordsNew.y << std::endl;
-						selected->absoluteTranslate(glm::vec3(objCoordsNew.x - objCoordsOld.x, objCoordsNew.y - objCoordsOld.y, 0.0f));
+						selected->translate(glm::vec3(objCoordsNew.x - objCoordsOld.x, objCoordsNew.y - objCoordsOld.y, 0.0f));
 						objCoordsOld = objCoordsNew;
 					break;
 				case ROTATE_V:
