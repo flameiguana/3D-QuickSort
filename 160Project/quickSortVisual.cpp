@@ -11,7 +11,12 @@ void QuickSortVisual::makeObjects(float height){
 	for(int i = 0; i < array.size(); i++){
 		float x = startingX + boxWidth*.5f +  margin*(i+1) + boxWidth*i;
 		//Allow custom objects?
-		Mesh* box = new Mesh("cube.coor", "cube.poly");
+		Mesh* box;
+		if(i == 0)
+			box = new Mesh("cube.coor", "cube.poly", true);
+		else 
+			box = new Mesh("cube.coor", "cube.poly");
+
 		box->calculateNormals();
 		box->createGLBuffer(false, vao, vaoIndex);
 		box->setupShader(shaderPrograms[vaoIndex], camera);
@@ -23,6 +28,10 @@ void QuickSortVisual::makeObjects(float height){
 		vaoIndex++;
 		//translate object so that top size is at x axis, scale y, translte back up
 	}
+}
+
+void QuickSortVisual::moveComparePointer(int location){
+	
 }
 
 QuickSortVisual::QuickSortVisual(std::vector<int> values, Camera* camera):camera(camera){
@@ -38,16 +47,18 @@ QuickSortVisual::QuickSortVisual(std::vector<int> values, Camera* camera):camera
 	paused = false;
 	myTime = 0;
 	lastTime = 0;
-
 	glGenVertexArrays(50, vao);
 
-	for(auto i = array.begin(); i < array.end(); i++){
+	shaderPrograms.push_back(Angel::InitShader("textured.vert", "textured.frag"));
+	for(auto i = array.begin() + 1; i < array.end(); i++){
 		// this is really only necessary for picking, switch to one shader later
-		shaderPrograms.push_back(Angel::InitShader("vshader.vert", "fshader.glsl"));
-
+		shaderPrograms.push_back(Angel::InitShader("vshader.vert", "fshader.frag"));
 	}
 
 	makeObjects(.75f);
+
+	objects.at(0)->loadTexture("indicator.png");
+
 	//Initialize quicksort algoritmn
 	right = array.size() - 1;
 	stack.push(left);

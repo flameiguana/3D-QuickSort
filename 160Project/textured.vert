@@ -2,6 +2,7 @@
 
 in vec3 vPosition;
 in vec3 vNormal;
+in vec2 vertexUV;
 
 uniform mat4 Projection;
 uniform mat4 ModelView;
@@ -16,6 +17,8 @@ uniform vec4 colorID;
 uniform vec4 LightDiffuse;
 uniform float Shininess;
 
+//Output that will be interpolated per fragment.
+out vec2 UV;
 out vec4 color;
 
 subroutine vec4 colorType(mat4 ModelView_);
@@ -60,10 +63,10 @@ subroutine(colorType)
 vec4 colorKeyMode(mat4 ModelView_){
 	return colorID;
 }
-
 void main()
 {
 	mat4 ModelView_ = ModelView * mTransformation;
 	gl_Position = Projection * ModelView_ * vec4(vPosition, 1.0);
 	color = colorModel(ModelView_);
+	UV = vertexUV;
 }

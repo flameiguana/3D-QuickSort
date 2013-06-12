@@ -6,6 +6,7 @@
 #include "Camera.h"
 #include "QuickSortVisual.h"
 #include "glm/glm.hpp"
+#include "FreeImage.h"
 #include <Windows.h>
 
 #include <cmath>
@@ -40,8 +41,6 @@ bool zoomMode;
 
 Mesh* selected;
 int pauseMenuValue = 0;
-unsigned int modelCount = 1;
-unsigned int oldModelCount = 1;
 QuickSortVisual* visualization;
 
 void display();
@@ -278,10 +277,10 @@ int main(int argc, char **argv)
 	//glutCreateMenu(NULL);
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
-
+	glEnable(GL_BLEND);
+	glEnable (GL_TEXTURE_2D);
 	glewExperimental = GL_TRUE;
 	glewInit();
-	
 
 	//glutMouseFunc((GLUTmousebuttonfun)TwEventMouseButtonGLUT);
 	glutMotionFunc(activeMouse);
@@ -296,7 +295,7 @@ int main(int argc, char **argv)
 	//Initialize AntTweakBar
 	TwInit(TW_OPENGL, NULL);
 	TwBar* bar = TwNewBar("OptionBar");
-	TwDefine(" OptionBar position='0 10' size='220 300' color='25 113 255' label='Options' ");
+	TwDefine(" OptionBar position='0 10' size='220 300' color='25 113 255' label='Controls' ");
 
 	TwAddVarCB(bar, "Pause", TW_TYPE_BOOL32, SetPauseCB, GetPauseCB, NULL, " key='space' help='Pause' ");
 	/*{
@@ -306,7 +305,6 @@ int main(int argc, char **argv)
 	}
 	*/
 
-	TwAddVarRW(bar, "Number of Models", TW_TYPE_UINT32, &modelCount, " min=1 max=50 key='+' ");
 	init();
 	glutMainLoop();
 	return 0;

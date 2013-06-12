@@ -53,13 +53,13 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Libraries\glew-1.9.0\include\;C:\Libraries\freeglut\include\;C:\Libraries\AntTweakBar\include\;C:\Libraries\glm-0.9.4.3\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Libraries\glew-1.9.0\include\;C:\Libraries\freeglut\include\;C:\Libraries\AntTweakBar\include\;C:\Libraries\glm-0.9.4.3\;C:\Libraries\FreeImage\lib\</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Libraries\glew-1.9.0\lib\;C:\Libraries\freeglut\lib\;C:\Libraries\AntTweakBar\lib\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);opengl32.lib;freeglut.lib;glew32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Libraries\glew-1.9.0\lib\;C:\Libraries\freeglut\lib\;C:\Libraries\AntTweakBar\lib\;C:\Libraries\FreeImage\lib\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);opengl32.lib;freeglut.lib;glew32.lib;FreeImage.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -103,6 +103,7 @@
   <ItemGroup>
     <None Include="AntTweakBar.dll" />
     <None Include="freeglut.dll" />
+    <None Include="FreeImage.dll" />
     <None Include="fshader.glsl" />
     <None Include="glew32.dll" />
     <None Include="vshader.glsl" />

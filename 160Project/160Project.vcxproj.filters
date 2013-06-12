@@ -66,5 +66,6 @@
     <None Include="AntTweakBar.dll" />
     <None Include="freeglut.dll" />
     <None Include="glew32.dll" />
+    <None Include="FreeImage.dll" />
   </ItemGroup>
 </Project>

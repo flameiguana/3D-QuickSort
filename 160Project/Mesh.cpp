@@ -194,16 +194,15 @@ bool Mesh::colorMatch(unsigned char *color){
 }
 
 //Note, polygons have variable number of vertices.
-Mesh::Mesh(const std::string &coords, const std::string &polys){
+Mesh::Mesh(const std::string &coords, const std::string &polys, bool isTextured){
 	//TODO Create bounding box.
 	//Calculate middle point
 	//Stick vertices into same buffer.
 	//Draw part of object (up to a certain index) using GL_TRIANGLES, and then draw the box
-	
+	this->isTextured = isTextured;
 	setColorID();
 	//Indicates that we know which vetices are associated with each polygon.
 	smartPolys = true;
-
 	//load the vertices. they are in order
 	std::ifstream file;
 	std::string unused;
@@ -213,7 +212,6 @@ Mesh::Mesh(const std::string &coords, const std::string &polys){
 	float x, y, z;
 	char junk;
 	file >> totalVerts;
-
 	rawCoords.reserve(totalVerts);
 	rawVerts.reserve(totalVerts);
 	vertexList.reserve(totalVerts);
@@ -264,6 +262,17 @@ Mesh::Mesh(const std::string &coords, const std::string &polys){
 	file >> totalPolys;
 	std::getline(file, unused);
 
+	//These are the texture coordinates of a face, taking into account that it
+	//it is going to be triangulated using my algorihtmn. Basically it only works for cubes.
+	std::vector<glm::vec2> originals;
+	originals.push_back(glm::vec2(0.0f, 0.0f));
+	originals.push_back(glm::vec2(1.0f, 0.0f));
+	originals.push_back(glm::vec2(1.0f, 1.0f));
+	originals.push_back(glm::vec2(0.0f, 0.0f));
+	originals.push_back(glm::vec2(1.0f, 1.0f));
+	originals.push_back(glm::vec2(0.0f, 1.0f));
+	originals.push_back(glm::vec2(0.0f, 0.0f));
+
 	/*
 	Vertex Normals are handled correctly.
 	Creates correct amount of surface normals
@@ -282,13 +291,13 @@ Mesh::Mesh(const std::string &coords, const std::string &polys){
 		int current = -1;
 		int previous;
 		int count = 1;
-		
+		int textureIndex = 0;
 		for(auto j = splitLine.begin() + 2; j < splitLine.end(); j++){
 			
 			previous = current;
 			current = atoi((*j).c_str()) - 1;
 			poly->addVertex(&rawCoords.at(current));
-
+			
 			if(count > 1){
 				if(count == 2){
 					poly->calculateNormal();
@@ -296,6 +305,14 @@ Mesh::Mesh(const std::string &coords, const std::string &polys){
 				rawVerts.push_back(rawCoords.at(first));
 				rawVerts.push_back(rawCoords.at(previous));
 				rawVerts.push_back(rawCoords.at(current));
+
+				//Very hard-coded
+				textureCoords.push_back(originals.at(textureIndex++));
+				if(textureIndex == originals.size())
+					textureIndex = 0;
+				textureCoords.push_back(originals.at(textureIndex++));
+				textureCoords.push_back(originals.at(textureIndex++));
+
 				//Since the verts are in order, it would be good to push the appropriate coordinates directly.
 				surfaceNormals.push_back(poly->normal);
 				surfaceNormals.push_back(poly->normal);
@@ -316,7 +333,9 @@ Mesh::Mesh(const std::string &coords, const std::string &polys){
 	/*
 	std::cout << "Polygon Count " << polygons.size() << std::endl;
 	std::cout << "Surface Normal Count " << surfaceNormals.size() << std::endl; //17832
+	
 	std::cout << "Point Count " << rawVerts.size() << std::endl; //17832
+	std::cout << "Texture Points " << textureCoords.size() << std::endl;
 	*/
 	file.close();
 }
@@ -411,10 +430,13 @@ void Mesh::createGLBuffer(bool smooth, GLuint* vao, int index){
 
 	sizeofVertices = rawVerts.size()*sizeof(glm::vec3);
 	sizeofNormals = surfaceNormals.size()*sizeof(glm::vec3);
-
+	sizeofTCoords = 0;
+	if(isTextured)
+		sizeofTCoords = textureCoords.size()*sizeof(glm::vec2);
+	
 	glGenBuffers(1, &vertexBuffer);
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeofVertices + sizeofNormals, NULL, GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeofVertices + sizeofNormals + sizeofTCoords, NULL, GL_DYNAMIC_DRAW);
 
 	//Hold the points to draw here
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeofVertices, rawVerts.data());
@@ -425,27 +447,14 @@ void Mesh::createGLBuffer(bool smooth, GLuint* vao, int index){
 	else{
 		glBufferSubData(GL_ARRAY_BUFFER, sizeofVertices, sizeofNormals, surfaceNormals.data());		
 	}
+	
+	if(isTextured){
+		glBufferSubData(GL_ARRAY_BUFFER, sizeofNormals + sizeofVertices, sizeofTCoords, textureCoords.data());
+	}
 	//Create the bounding box buffers. Current vao is still bound.
 	
 	//Unbind buffers
     glBindVertexArray(0);
-}
-
-void Mesh::setDiffuse(glm::vec4 lightDiffuse, glm::vec4 materialDiffuse){
-	this->lightDiffuse = lightDiffuse;
-	this->materialDiffuse = materialDiffuse;
-	//Pass to shader.
-	glUseProgram(program);
-	glUniform4fv(lightDiffuse_loc, 1, glm::value_ptr(lightDiffuse));
-	glUniform4fv(materialDiffuse_loc, 1, glm::value_ptr(materialDiffuse));
-}
-
-void Mesh::setSpecular(glm::vec4 materialDiffuse, float shininess){
-	this->materialSpecular = materialSpecular;
-	this->shininess = shininess;
-	glUseProgram(program);
-	glUniform4fv(materialSpecular_loc, 1, glm::value_ptr(materialSpecular));
-	glUniform1f(shininess_loc, shininess);
 }
 
 //Should pass in names as parameters.
@@ -460,7 +469,9 @@ void Mesh::setupShader(GLuint& _program, Camera* camera_){
 
 	vPosition = glGetAttribLocation(_program, "vPosition");
 	vNormal = glGetAttribLocation(_program, "vNormal"); 
-	
+	if(isTextured)
+		vertexUV = glGetAttribLocation(_program, "vertexUV");
+
 	const float maxValue = 255.0;
 	//This stuff is hard coded.-------------
 	glm::vec4 materialAmbient(.3, .3, .3, .2);
@@ -513,6 +524,66 @@ void Mesh::setupShader(GLuint& _program, Camera* camera_){
     glBindVertexArray(0);
 }
 
+
+void Mesh::setDiffuse(glm::vec4 lightDiffuse, glm::vec4 materialDiffuse){
+	this->lightDiffuse = lightDiffuse;
+	this->materialDiffuse = materialDiffuse;
+	//Pass to shader.
+	glUseProgram(program);
+	glUniform4fv(lightDiffuse_loc, 1, glm::value_ptr(lightDiffuse));
+	glUniform4fv(materialDiffuse_loc, 1, glm::value_ptr(materialDiffuse));
+}
+
+void Mesh::setSpecular(glm::vec4 materialDiffuse, float shininess){
+	this->materialSpecular = materialSpecular;
+	this->shininess = shininess;
+	glUseProgram(program);
+	glUniform4fv(materialSpecular_loc, 1, glm::value_ptr(materialSpecular));
+	glUniform1f(shininess_loc, shininess);
+}
+/*
+  http://www.opengl.org/discussion_boards/showthread.php/163929-image-loading?p=1158293#post1158293
+*/
+void Mesh::loadTexture(const char *filename){
+	isTextured = true;
+	FREE_IMAGE_FORMAT format = FreeImage_GetFileType(filename, 0);
+	FIBITMAP* image = FreeImage_Load(format, filename);
+ 
+	FIBITMAP* temp = image;
+	image = FreeImage_ConvertTo32Bits(image);
+	FreeImage_Unload(temp);
+ 
+	int w = FreeImage_GetWidth(image);
+	int h = FreeImage_GetHeight(image);
+ 
+	GLubyte* texture = new GLubyte[4*w*h];
+	char* pixels = (char*)FreeImage_GetBits(image);
+	//FreeImage loads in BGR format, so you need to swap some bytes(Or use GL_BGR).
+ 
+	for(int j= 0; j< w * h; j++){
+		texture[j * 4 + 0] = pixels[j * 4 + 2];
+		texture[j * 4 + 1] = pixels[j * 4 + 1];
+		texture[j * 4 + 2] = pixels[j * 4 + 0];
+		texture[j * 4 + 3] = pixels[j * 4 + 3];
+	}
+
+	//Bind raw image to texture.
+	glGenTextures(1, &textureLocation);
+	glBindTexture(GL_TEXTURE_2D, textureLocation);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid*)texture );
+ 
+	GLenum huboError = glGetError();
+	if(huboError){
+		std::cout<<"There was an error loading the texture"<< std::endl;
+	}
+}
+
+
 /*
 	Handles animations.
 */
@@ -524,7 +595,12 @@ void Mesh::draw(){
 
 	glBindVertexArray(vao[vaoIndex]);
 	glUseProgram(program);
+
+	if(isTextured)
+		glBindTexture(GL_TEXTURE_2D, textureLocation);
+
 	glUniformSubroutinesuiv(GL_VERTEX_SHADER, 1, subroutines);
+
 	//Bind to this array, using these buffers.
 	if(drawBox)
 		boundingBox->draw(vPosition, mTransformation_loc, mTransformation);
@@ -533,7 +609,6 @@ void Mesh::draw(){
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
 	glUniformMatrix4fv(modelView_loc, 1, GL_FALSE, glm::value_ptr(camera->getModelView()));
 	glUniformMatrix4fv(mProjection_loc, 1, GL_FALSE, glm::value_ptr(camera->getProjection()));
-
 	glUniformMatrix4fv(mTransformation_loc, 1, GL_FALSE, glm::value_ptr(mTransformation));
 	
 	//Rebind location of these things
@@ -541,6 +616,11 @@ void Mesh::draw(){
 	glEnableVertexAttribArray(vPosition);
 	glVertexAttribPointer(vNormal, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(sizeofVertices));
 	glEnableVertexAttribArray(vNormal);
+
+	if(isTextured){
+		glVertexAttribPointer(vertexUV, 2, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(sizeofVertices + sizeofNormals));
+		glEnableVertexAttribArray(vertexUV);
+	}
 
 	glDrawArrays(GL_TRIANGLES, 0 , rawVerts.size());
 

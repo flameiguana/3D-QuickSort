@@ -15,6 +15,7 @@ Changing lighting type.
 
 #pragma once
 #include "Angel.h"
+#include "FreeImage.h"
 // #include "Animation.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -33,7 +34,7 @@ typedef enum {NORMAL_MODE = 1, COLOR_ID} LightingType;
 class Mesh
 {
 public:
-	Mesh(const std::string &coords, const std::string &polys);
+	Mesh(const std::string &coords, const std::string &polys, bool isTextured = false);
 	Mesh(std::vector<glm::vec3> &vertices);
 	void calculateNormals();
 	std::vector<glm::vec3> getRawVertices(){return rawVerts;}
@@ -67,6 +68,9 @@ public:
 	void setSpecular(glm::vec4 materialDiffuse, float shininess);
 	bool colorMatch(unsigned char *color);
 	void setupShader(GLuint& program, Camera* camera);
+
+	void loadTexture(const char *filename);
+
 	glm::vec4 getSize(){return size;}
 	glm::vec3 getCenter(){return currentCenter;}
 	void setWireframe(bool value){wireframe = value;}
@@ -80,12 +84,13 @@ public:
 	GLuint program;
 	int vaoIndex;
 	GLuint* vao;
+	GLuint textureLocation;
 	GLuint normalModeIndex,  colorKeyIndex;
 	GLuint specularOn, specularOff;
 
 	GLuint subroutines[1];
 
-	GLuint vPosition, vNormal, modelView_loc, mTransformation_loc, mProjection_loc;
+	GLuint vPosition, vNormal, modelView_loc, mTransformation_loc, mProjection_loc, vertexUV;
 	GLuint lightPosition_loc;
 	GLuint lightDiffuse_loc, materialDiffuse_loc;
 	GLuint lightSpecular_loc, materialSpecular_loc, shininess_loc;
@@ -95,6 +100,7 @@ public:
 
 	size_t sizeofVertices;
 	size_t sizeofNormals;
+	size_t sizeofTCoords;
 
 private:
 
@@ -106,6 +112,8 @@ private:
 	bool drawBox;
 	//Tells us to reload uniform variables.
 	bool changedUniform;
+	bool isTextured;
+
 	/*Colors*/
 	glm::vec4 materialDiffuse;
 	glm::vec4 lightDiffuse;
@@ -133,6 +141,8 @@ private:
 	std::vector<glm::vec3> rawVerts;
 	std::vector<glm::vec3> rawCoords;
 	std::vector<glm::vec3> vertexNormals;
+
+	std::vector<glm::vec2> textureCoords;
 	//std::vector<glm::vec3> boundingBox;
 
 	std::vector<glm::vec3*> vertexNRefs;

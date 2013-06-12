@@ -1,10 +1,14 @@
 #pragma once
 
 #include <glm/glm.hpp>
+#include <cmath>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include "Mesh.h"
 
+#ifndef PI
+#define PI  3.14159265
+#endif
 
 //Client program creates these and passes them to mesh.
 //Right when mesh finds one of these, it starts the update method.
@@ -12,6 +16,7 @@ class Animation
 {
 public:
 	enum AnimationType {ROTATE, SCALE, TRANSLATE, POSITION};
+	enum EasingType {LINEAR, ELASTIC_OUT};
 	Animation(AnimationType type);
 
 	//Pass in the initial values, read from somewhere.
@@ -21,7 +26,7 @@ public:
 	//Pass in current center if moving to an absolute position
 	void setStart(Mesh* mesh, glm::vec3& start);
 	//Enter final scale, rotation (degrees), or position
-	void setGoal(glm::vec3& goal, int duration);
+	void setGoal(glm::vec3& goal, float duration, EasingType easing = LINEAR);
 	//Calls the appropriate transformation function in the mesh.
 	void update(int time);
 
@@ -34,12 +39,14 @@ public:
 private:
 	glm::vec3 calculateStep(float t);
 	AnimationType animationType;
+	EasingType easingType;
 	glm::vec3 start;
+	glm::vec3 changeInValue;
 	glm::vec3 goal;
 	glm::vec3 currentTransformation; // a portion of the goal trans
 	int startTime;
 	int timeLeft;
-	int duration;
+	float duration;
 	bool started;
 	bool hasLink;
 	bool ended;

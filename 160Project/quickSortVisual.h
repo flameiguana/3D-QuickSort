@@ -27,6 +27,7 @@ private:
 
 	/*3D variables*/
 	Camera* camera;
+	Mesh* comparePointer;
 	float boxWidth;
 	GLuint vao[50];
 	std::vector<GLuint> shaderPrograms;
@@ -41,9 +42,9 @@ private:
 	void swap(int a, int b);
 	int partitionAnimationStep(int left, int right, int step, int& scanner, int pivotIndex);
 	void updateAnimations(int time);
-
 	void focus(int a, int b);
 	void markPivot(int pivot);
+	void moveComparePointer(int location);
 	void quickSortStep(int& left, int& right, int& step, int& scanner);
 	void makeObjects(float height);
 };
