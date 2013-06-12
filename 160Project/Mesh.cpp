@@ -87,7 +87,7 @@ public:
 			std::cout << "Warning: can't calculate normal with less than three vertices." << std::endl;
 		else
 		{
-			normal = glm::normalize(glm::cross(  *vertices.at(1) - *vertices.at(0), *vertices.at(2) - *vertices.at(0) ));
+			normal = glm::normalize(glm::cross(  *vertices.at(2) - *vertices.at(0), *vertices.at(1) - *vertices.at(0) ));
 		}
 	}
 
@@ -368,7 +368,6 @@ Mesh::Mesh(std::vector<glm::vec3> &vertices){
 /*
 	Uses two different ways of calculating normals, depending on if a file was read.
 */
-
 void Mesh::calculateNormals()
 {
 	if(smartPolys == false){
@@ -432,6 +431,23 @@ void Mesh::createGLBuffer(bool smooth, GLuint* vao, int index){
     glBindVertexArray(0);
 }
 
+void Mesh::setDiffuse(glm::vec4 lightDiffuse, glm::vec4 materialDiffuse){
+	this->lightDiffuse = lightDiffuse;
+	this->materialDiffuse = materialDiffuse;
+	//Pass to shader.
+	glUseProgram(program);
+	glUniform4fv(lightDiffuse_loc, 1, glm::value_ptr(lightDiffuse));
+	glUniform4fv(materialDiffuse_loc, 1, glm::value_ptr(materialDiffuse));
+}
+
+void Mesh::setSpecular(glm::vec4 materialDiffuse, float shininess){
+	this->materialSpecular = materialSpecular;
+	this->shininess = shininess;
+	glUseProgram(program);
+	glUniform4fv(materialSpecular_loc, 1, glm::value_ptr(materialSpecular));
+	glUniform1f(shininess_loc, shininess);
+}
+
 //Should pass in names as parameters.
 void Mesh::setupShader(GLuint& _program, Camera* camera_){
 	currentShading = FLAT;
@@ -448,48 +464,45 @@ void Mesh::setupShader(GLuint& _program, Camera* camera_){
 	const float maxValue = 255.0;
 	//This stuff is hard coded.-------------
 	glm::vec4 materialAmbient(.3, .3, .3, .2);
-	glm::vec4 materialDiffuse(117.0/maxValue, 175.0/maxValue, 255.0/maxValue, 1.0);
-	glm::vec4 materialSpecular(1.0, 0.0, 0.0, 1.0);
+	materialSpecular = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 
-	glm::vec4 lightAmbient(241/maxValue, 245/maxValue, 122/maxValue, .2f); //yellow
+	glm::vec4 lightAmbient(0.0f, 0.0f, 0.0f, 0.0f);
+	lightSpecular = glm::vec4 (1.0f, 1.0f, 1.0f, 1.0f); //A bright red specular color
+	lightDiffuse = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f); //white
 
-	glm::vec4 lightSpecular(1.0, 0.0, 0.0, 1.0); //A bright red specular color
-	glm::vec4 lightDiffuse(1.0f, 1.0f, 1.0f, 1.0f);
-
-	float shininess = 40;
+	shininess = .25f* 128.0f;
 	//To get diffuse lighting, calculate angle of each triangle.
 	//So get the surface normal of every three points.
 	glm::vec4 ambientProduct = lightAmbient * materialAmbient;
-	glm::vec4 specularProdcut = lightSpecular * materialSpecular;
 
 	//Get uniform variable locations.
-	GLuint lightDiffuse_loc = glGetUniformLocation(_program, "LightDiffuse");
+	lightDiffuse_loc = glGetUniformLocation(_program, "LightDiffuse");
+	materialDiffuse_loc = glGetUniformLocation(_program, "DiffuseReflect");
+	materialDiffuse = glm::vec4(0.8f, 0.8f, 0.8f, 1.0f);
 	GLuint ambientProduct_loc = glGetUniformLocation(_program, "AmbientProduct");
-	GLuint lightSPecular_loc = glGetUniformLocation(_program, "SpecularProduct");
-	GLuint lightPosition_loc = glGetUniformLocation(_program, "LightPosition");
-	GLuint shininess_loc = glGetUniformLocation(_program, "Shininess");
+	lightSpecular_loc = glGetUniformLocation(_program, "LightSpecular");
+	materialSpecular_loc = glGetUniformLocation(_program, "MaterialSpecular");
+	lightPosition_loc = glGetUniformLocation(_program, "LightPosition");
+	shininess_loc = glGetUniformLocation(_program, "Shininess");
 	GLuint colorID_loc = glGetUniformLocation(_program, "colorID");
 	//Set uniform variables
 	glUniform4fv(ambientProduct_loc, 1, glm::value_ptr(ambientProduct));
 	glUniform4fv(lightDiffuse_loc, 1, glm::value_ptr(lightDiffuse));
-	glUniform4fv(lightSPecular_loc, 1, glm::value_ptr(specularProdcut));
+	glUniform4fv(materialDiffuse_loc, 1, glm::value_ptr(materialDiffuse));
+	glUniform4fv(lightSpecular_loc, 1, glm::value_ptr(lightSpecular));
+	glUniform4fv(materialSpecular_loc, 1, glm::value_ptr(materialSpecular));
 	//Dont know why this only works when negative. 4th element is zero to signify directional
-	glm::vec4 lightPosition(0.0, 0.0, 1.0, 0.0);
+	lightPosition = glm::vec4(0.0, 0.8, 1.0, 0.0);
+
 	glUniform4fv(lightPosition_loc, 1, glm::value_ptr(lightPosition));
 	glUniform4fv(colorID_loc, 1, glm::value_ptr(glm::vec4(colorID[0]/255.0f, colorID[1]/255.0f, colorID[2]/255.0f, 1.0f)));
 	glUniform1f(shininess_loc, shininess);
 
 	//Set up pointers to subroutines in shader.
-	fullLightingIndex = glGetSubroutineIndex(_program, GL_VERTEX_SHADER, "both");
-	diffuseIndex = glGetSubroutineIndex(_program, GL_VERTEX_SHADER, "diffuseOnly");
-	ambientIndex = glGetSubroutineIndex(_program, GL_VERTEX_SHADER, "ambientOnly");
-	colorKeyIndex = glGetSubroutineIndex(_program, GL_VERTEX_SHADER, "colorKey");
-	
-	specularOn = glGetSubroutineIndex(_program, GL_VERTEX_SHADER, "specularOn");
-	specularOff = glGetSubroutineIndex(_program, GL_VERTEX_SHADER, "specularOff");
+	normalModeIndex = glGetSubroutineIndex(_program, GL_VERTEX_SHADER, "normalMode");
+	colorKeyIndex = glGetSubroutineIndex(_program, GL_VERTEX_SHADER, "colorKeyMode");
 
-	subroutines[0] = diffuseIndex; //default is diffuse
-	subroutines[1] = specularOff; //default is specular off
+	subroutines[0] = normalModeIndex; //default is diffuse
 
 	mTransformation_loc = glGetUniformLocation(_program, "mTransformation");
 	modelView_loc = glGetUniformLocation(_program, "ModelView");
@@ -503,8 +516,6 @@ void Mesh::setupShader(GLuint& _program, Camera* camera_){
 /*
 	Handles animations.
 */
-
-
 void Mesh::draw(){
 	if(wireframe)
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -513,17 +524,17 @@ void Mesh::draw(){
 
 	glBindVertexArray(vao[vaoIndex]);
 	glUseProgram(program);
-	glUniformSubroutinesuiv(GL_VERTEX_SHADER, 2, subroutines);
+	glUniformSubroutinesuiv(GL_VERTEX_SHADER, 1, subroutines);
 	//Bind to this array, using these buffers.
 	if(drawBox)
 		boundingBox->draw(vPosition, mTransformation_loc, mTransformation);
-
+	//http://www.idevgames.com/forums/thread-551.html This keeps camera fixed in world coordinates.
+	glUniform4fv(lightPosition_loc, 1, glm::value_ptr( camera->getInverse()* lightPosition ));
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-
-	glUniformMatrix4fv(mTransformation_loc, 1, GL_FALSE, glm::value_ptr(mTransformation));
-	
 	glUniformMatrix4fv(modelView_loc, 1, GL_FALSE, glm::value_ptr(camera->getModelView()));
 	glUniformMatrix4fv(mProjection_loc, 1, GL_FALSE, glm::value_ptr(camera->getProjection()));
+
+	glUniformMatrix4fv(mTransformation_loc, 1, GL_FALSE, glm::value_ptr(mTransformation));
 	
 	//Rebind location of these things
 	glVertexAttribPointer(vPosition, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(0));
@@ -651,27 +662,16 @@ void Mesh::scaleCenter(glm::vec3& scaleFactor){
 }
 
 //Change indices of subroutines.
-void Mesh::setLighting(LightingType lighting, bool specular){
+void Mesh::setLighting(LightingType lighting){
 	switch(lighting){
-		case DIFFUSE:
-			subroutines[0] = diffuseIndex;
-			break;
-		case AMBIENT:
-			subroutines[0] = ambientIndex;
-			break;
-		case DIFFUSE_AND_AMBIENT:
-			subroutines[0] = fullLightingIndex;
+		case NORMAL_MODE:
+			subroutines[0] = normalModeIndex;
 			break;
 		case COLOR_ID:
 			subroutines[0] = colorKeyIndex;
 			break;
 	}
-	if(specular)
-		subroutines[1] = specularOn;
-	else 
-		subroutines[1] = specularOff;
 }
-
 
 Mesh::~Mesh(){
 	//TODO, delete pointers

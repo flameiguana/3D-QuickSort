@@ -1,15 +1,4 @@
-/* 
-* Gerardo Perez
-* Lab 7
-* Contains some code from OpenGL Cookbook (in shader)
-* 
-* Clicking on an object will change its shading.
-* Now includes zooming.
-*/
 
-
-
-///TODO instead of having a camera per object, create a scene object
 
 #include "Angel.h"
 #include "Mesh.h"
@@ -43,15 +32,13 @@ TransformMode currentTransform;
 unsigned char Mesh::globalColorID[3] = {0,0,0};
 
 //Allow us to create a menu for switching between diffuse, ambient, and ambient + diffuse lighting.
-const LightingType Lighting_MAX = DIFFUSE_AND_AMBIENT;
-LightingType currentLighting = DIFFUSE;
-LightingType prevLighting = DIFFUSE;
+const LightingType Lighting_MAX = COLOR_ID;
+LightingType currentLighting = NORMAL_MODE;
+LightingType prevLighting = NORMAL_MODE;
 float translate = 0.0;
-bool currSpecular;
 bool zoomMode;
 
 Mesh* selected;
-int specularMenuValue = 0;
 int pauseMenuValue = 0;
 unsigned int modelCount = 1;
 unsigned int oldModelCount = 1;
@@ -87,7 +74,7 @@ void init()
 	array.push_back(7);
 
 	visualization = new QuickSortVisual(array, globalCamera);
-	//glPolygonMode(GL_FRONT, GL_FILL);
+	
 	glClearColor(1.0, 1.0, 1.0, 1.0);
 }
 
@@ -97,7 +84,7 @@ void display()
 	int time = glutGet(GLUT_ELAPSED_TIME);
 	if(currentLighting != prevLighting){
 		for(auto i = visualization->getObjects()->begin(); i < visualization->getObjects()->end(); i++)
-			(*i)->setLighting(currentLighting, currSpecular);
+			(*i)->setLighting(currentLighting);
 		prevLighting = currentLighting;
 	}
 	visualization->update(time);
@@ -106,7 +93,6 @@ void display()
 	glClearDepth(1.0);
 
 	visualization->draw();
-
 	TwDraw();
 	glutSwapBuffers();
 	glutPostRedisplay();
@@ -138,7 +124,7 @@ void mouseSelect(int button, int state, int x, int y){
 		unsigned char color[3];
 		//Turn off lighting.
 		for(auto i = visualization->getObjects()->begin(); i < visualization->getObjects()->end(); i++)
-			(*i)->setLighting(COLOR_ID, false);
+			(*i)->setLighting(COLOR_ID);
 		
 		//Render the visualization->getObjects()->
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
@@ -161,7 +147,7 @@ void mouseSelect(int button, int state, int x, int y){
 		}
 		//Restore lighting.
 		for(auto i = visualization->getObjects()->begin(); i < visualization->getObjects()->end(); i++)
-			(*i)->setLighting(currentLighting, currSpecular);
+			(*i)->setLighting(currentLighting);
 	}
 }
 
@@ -171,7 +157,6 @@ void reshape(int width, int height)
 	winWidth = width;
 	WINDOW_BORDER = HEIGHT - height;
 	winHeight = height;
-	// std::cout << winHeight << std::endl;
 	glViewport(0, 0, width,height);
 	TwWindowSize(width, height);
 }
@@ -208,7 +193,7 @@ void activeMouse(int x, int y){
 	if(!TwEventMouseMotionGLUT(x, y)){
 		float differenceY = (float)(winHeight - y - 1 - prevY);
 		float differenceX = (float)(prevX - x);
-		float scale, rotation;
+	float scale, rotation;
 		bool positive = true;
 		if(zoomMode == true){
 			float zoomFactor;
@@ -281,32 +266,9 @@ void TW_CALL GetPauseCB(void *value, void *clientData){
 	*(int *)value = pauseMenuValue;
 }
 
-//Toggles specularity.
-void TW_CALL SetSpecularCB(const void *value, void *clientData)
-{
-	(void)clientData; // unused
-
-	specularMenuValue = *(const int *)value;
-	if( specularMenuValue!= 0 ) {
-		for(auto i = visualization->getObjects()->begin(); i < visualization->getObjects()->end(); i++)
-			(*i)->setLighting(currentLighting, true);
-		currSpecular = true;
-	}
-	else{
-		for(auto i = visualization->getObjects()->begin(); i < visualization->getObjects()->end(); i++)
-			(*i)->setLighting(currentLighting, false);
-		currSpecular = false;
-	}
-}
-
-void TW_CALL GetSpecularCB(void *value, void *clientData)
-{
-	(void)clientData;
-	*(int *)value = specularMenuValue;
-}
-
 int main(int argc, char **argv)
 {
+	srand ( unsigned ( std::time(0) ) );
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH);
 	glutInitWindowSize(800, HEIGHT);
@@ -337,13 +299,13 @@ int main(int argc, char **argv)
 	TwDefine(" OptionBar position='0 10' size='220 300' color='25 113 255' label='Options' ");
 
 	TwAddVarCB(bar, "Pause", TW_TYPE_BOOL32, SetPauseCB, GetPauseCB, NULL, " key='space' help='Pause' ");
-	{
-		TwEnumVal lightingEV[Lighting_MAX] = { {DIFFUSE, "Diffuse"}, {AMBIENT, "Ambient"}, {DIFFUSE_AND_AMBIENT, "Both"} };
+	/*{
+		TwEnumVal lightingEV[Lighting_MAX] = { {NORMAL_MODE , "Normal"}, {COLOR_ID, "Color ID"} };
 		TwType lightingEnum = TwDefineEnum("LightingType", lightingEV, Lighting_MAX);
 		TwAddVarRW(bar, "Lighting", lightingEnum, &currentLighting, " keyIncr=',' keyDecr='.' help='Select Lighting Type.' ");
 	}
+	*/
 
-	TwAddVarCB(bar, "Specular", TW_TYPE_BOOL32, SetSpecularCB, GetSpecularCB, NULL, " key=s help='Toggle Specular Lighting' ");
 	TwAddVarRW(bar, "Number of Models", TW_TYPE_UINT32, &modelCount, " min=1 max=50 key='+' ");
 	init();
 	glutMainLoop();

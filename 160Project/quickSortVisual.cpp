@@ -33,15 +33,18 @@ QuickSortVisual::QuickSortVisual(std::vector<int> values, Camera* camera):camera
 	finished = false;
 	vaoIndex = 0;
 	left = 0;
-	step = 0;
+	step = -1;
 	scanner = 0;
 	paused = false;
-
+	myTime = 0;
 	lastTime = 0;
+
 	glGenVertexArrays(50, vao);
+
 	for(auto i = array.begin(); i < array.end(); i++){
 		// this is really only necessary for picking, switch to one shader later
-		shaderPrograms.push_back(Angel::InitShader("vshader.glsl", "fshader.glsl"));
+		shaderPrograms.push_back(Angel::InitShader("vshader.vert", "fshader.glsl"));
+
 	}
 
 	makeObjects(.75f);
@@ -60,6 +63,11 @@ void QuickSortVisual::swap(int a, int b){
 	objects.at(b) = tempMesh;
 }
 
+void QuickSortVisual::markPivot(int i){
+	objects.at(i)->setSpecular(glm::vec4(0.297254f,	0.30829f, 0.306678f, 1.0f), .1f*128.0f);
+	objects.at(i)->setDiffuse(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), glm::vec4(0.396f, 0.74151f, 0.69102f, 1.0f));
+}
+
 //Make this fancier later on.
 void QuickSortVisual::focus(int a, int b){
 	for(int i = 0; i < objects.size(); i++){
@@ -75,9 +83,6 @@ void QuickSortVisual::focus(int a, int b){
 	2. Take current locations of both, swap positions excluding z axis. Duration is same for both.
 	3. Push back into line.
 */
-
-//take in an array of pairs.
-/*std::pair<Animation, Animation> */
 void QuickSortVisual::swapAnimation(int a, int b){
 
 	Mesh* meshA = objects.at(a);
@@ -120,16 +125,20 @@ void QuickSortVisual::swapAnimation(int a, int b){
 	switchB.chain(returnB);
 	offsetB.chain(switchB);
 	
-	//Note that these will go out of scope, so pass a copy to mesh, not a reference 
-	//return std::pair<Animation, Animation>(offsetA, offsetB);
 	animations.push_back(offsetA);
 	animations.push_back(offsetB);
 }
 
 
 //this will only be called when animation queue is empty;
-int QuickSortVisual::partitionAnimationStep(int left, int right, int step, int& scanner){
+int QuickSortVisual::partitionAnimationStep(int left, int right, int step, int& scanner, int pivotIndex){
 	//assume right = pivot
+	if(step == -1){
+		markPivot(pivotIndex);
+		swap(pivotIndex, right);
+		swapAnimation(pivotIndex, right);
+		return scanner;
+	}
 	int pivotValue = array.at(right);
 	//instead of having for loop, iterate by steps
 	int i = left + step;
@@ -148,7 +157,6 @@ int QuickSortVisual::partitionAnimationStep(int left, int right, int step, int& 
 	else {
 		swapAnimation(right, scanner);
 		swap(right, scanner);
-		
 	}
 	return scanner;
 }
@@ -167,21 +175,24 @@ void QuickSortVisual::quickSortStep(int& left, int& right, int& step, int& scann
 			focus(left, right);
 			poppedStack = true;
 		}
-
+		if(step == -1){
+			//get a random pivot
+			pivotIndex = left + (std::rand() % (right - left + 1));
+		}
 		//This means that partitionAnimation has finished.
-		if(step > right - left){
-			step = 0;
+		if(step > right - left){ //the extra step is for first pivot switch
+			step = -1;
 			std::cout << "Pivot is " << pivot << std::endl;
 			poppedStack = false;
 			std::cout << "Ready to Recurse" << std::endl;   
 			havePivot = true;
+			markPivot(pivot);
 		}
 
 		else
-			pivot = partitionAnimationStep(left, right, step++, scanner);
+			pivot = partitionAnimationStep(left, right, step++, scanner, pivotIndex);
 		//the value of this pivot value is ignored until here.
 		if(havePivot){
-
 			//Right side of pivot is added to stack if there are elements to right of it.
 			if(pivot + 1 < right)
 			{
@@ -238,18 +249,17 @@ void QuickSortVisual::updateAnimations(int time){
 	animations.splice(animations.begin(), links);
 }
 
+
 void QuickSortVisual::update(int realTime){
-	int pauseTime = realTime - lastTime;
-	int time = realTime - pauseTime;
-	
 	if(!paused){
-		updateAnimations(time);
-		lastTime = realTime;
+		// Allows us to continue animation were we left of.
+		myTime += realTime - lastTime;  
+		updateAnimations(myTime);
 		if(animations.size() == 0 && !finished){
-			//partitionAnimationStep(0, array.size() - 1, step++, scanner);
 			quickSortStep(left, right, step, scanner);
 		}
 	}
+	lastTime = realTime;
 }
 
 

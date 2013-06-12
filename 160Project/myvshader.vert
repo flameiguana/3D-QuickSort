@@ -16,14 +16,11 @@ uniform vec4 LightDiffuse;
 uniform float Shininess;
 out vec4 color;
 
-const vec4 grass = vec4(0.8, .8, 0.8, 1.0);
+const vec4 grass = vec4(.8, .8, .8, 1.0);
 
 subroutine vec4 shadeModelType(vec3 eyePos, vec3 eyeNorm, vec3 L);
 subroutine uniform shadeModelType shadeModel;
 
-//Switches for enabling or disabling specular calculation.
-subroutine vec4 specularType(vec3 eyePos, vec3 L, vec3 eyeNorm);
-subroutine uniform specularType specularModel;
 
 subroutine(shadeModelType)
 //Ambient and diffuse
@@ -32,19 +29,17 @@ vec4 both(vec3 eyePos, vec3 eyeNorm, vec3 L)
 	//ambient light is the same for any vertex
 	vec4 ambient = AmbientProduct;
 	//diffuse reflection coefficient (sDotN)
-    float Kd = max(dot(L, eyeNorm), 0.0 );
+    float sDotN = max(dot(L, eyeNorm), 0.0 );
 
 	//calculate diffuse intensity
-    vec4 diffuse = DiffuseProduct*Kd;
+    vec4 diffuse = DiffuseProduct*sDotN;
 	return ambient + diffuse;
 }
 
 subroutine(shadeModelType)
 vec4 diffuseOnly(vec3 eyePos, vec3 eyeNorm, vec3 L)
 {
-    float Kd = max(dot(L, eyeNorm), 0.0 );
-	//calculate diffuse intensity
-    return Kd*DiffuseProduct;
+    return DiffuseProduct * max(dot(L, eyeNorm), 0.0 );
 }
 
 subroutine(shadeModelType)
@@ -58,6 +53,9 @@ vec4 colorKey(vec3 eyePos, vec3 eyeNorm, vec3 L)
 {
 	return colorID;	
 }
+//Switches for enabling or disabling specular calculation.
+subroutine vec4 specularType(vec3 eyePos, vec3 L, vec3 eyeNorm);
+subroutine uniform specularType specularModel;
 
 subroutine(specularType)
 vec4 specularOn(vec3 eyePos, vec3 eyeNorm, vec3 L){
@@ -67,13 +65,13 @@ vec4 specularOn(vec3 eyePos, vec3 eyeNorm, vec3 L){
 	//reflection vertex
 	vec3 R = reflect(-L, eyeNorm);
 
-    float Kd = max(dot(L,eyeNorm), 0.0 );
+    float sDotN = max(dot(L,eyeNorm), 0.0 );
 	//default when no light is reaching surface
 	vec4 specular = vec4(0.0, 0.0, 0.0, 1.0);
-	if(Kd > 0.0){
+	if(sDotN > 0.0){
 		//specular reflection coefficient
 		float Ks = pow(max(dot(R,E),0.0), Shininess);
-		specular = Ks * SpecularProduct;
+		specular =  SpecularProduct * Ks;
 	}
 	return specular;
 }
@@ -91,7 +89,7 @@ void main()
 
 	vec3 eyePos = (ModelView_ * vec4(vPosition, 1.0)).xyz;
 	//Take upper three from modelview
-    vec3 eyeNorm = normalize(inverse(transpose(ModelView_)) * vec4(vNormal, 0.0)).xyz;
+    vec3 eyeNorm = normalize(inverse(transpose(mat3(ModelView_))) * vNormal);
 	vec3 L;
 	if(LightPosition.w == 0.0)
 		L = normalize(LightPosition.xyz);

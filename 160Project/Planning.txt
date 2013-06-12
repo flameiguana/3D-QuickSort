@@ -33,7 +33,6 @@ When it finishes, push back up, destroying previous one.
 When doing partition, signify comparisons somehow (mapping texture to top face of comparing?)
 Swaps are shown by translations.
 
-
 Implementation To Do:
 1. Position and scale elements. -  Good enough for now.
 2. Work on a single swap animation (dedicated function)
@@ -49,8 +48,8 @@ Implementation To Do:
 	Steps
 	a) Once partition animation finishes, call quicksort step again
 5. Mark pivot point. Somehow make it obvious that everything to the left is less than it, everything to right is greater.
-6. Get Pausing working
-7. Get camera movement with top view.
+6. Get Pausing working.
+7. Get camera movement with top view. (align movement to one axis.)
 
 Remarks:
 Each object doesn't need its own shader. Even for picking, you can just pass in color id in draw loop.

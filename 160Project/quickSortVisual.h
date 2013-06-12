@@ -34,14 +34,16 @@ private:
 
 	//a unit of animation, can use this to dynamically change animation speed depending on distance traveled
 	int animationDuration;
-	int lastTime;
+	int lastTime, myTime;
+	int pivotIndex;
 	bool paused;
 	void swapAnimation(int a, int b);
 	void swap(int a, int b);
-	int partitionAnimationStep(int left, int right, int step, int& scanner);
+	int partitionAnimationStep(int left, int right, int step, int& scanner, int pivotIndex);
 	void updateAnimations(int time);
 
 	void focus(int a, int b);
+	void markPivot(int pivot);
 	void quickSortStep(int& left, int& right, int& step, int& scanner);
 	void makeObjects(float height);
 };

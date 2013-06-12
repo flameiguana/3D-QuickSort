@@ -39,6 +39,7 @@ void Animation::update(int time){
 		//bad thins is that you can't use the same animation on multiple variables witout perhaps some ugliness.
 		return;
 	}
+	
 	//scale time elapsed to 1
 	glm::vec3 step = calculateStep(difference/(float)duration);
 	switch(animationType){

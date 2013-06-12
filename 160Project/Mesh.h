@@ -10,7 +10,7 @@ Creating a shader (with hard-coded values)
 Reading from a file with Alex Pang's format.
 Reading from a list of vertices.
 Calculating normals for verts and surfaces.
-Changing lighting type.s
+Changing lighting type.
 */
 
 #pragma once
@@ -28,7 +28,7 @@ Changing lighting type.s
 #include "Camera.h"
 
 typedef enum {FLAT, SMOOTH} ShadingType;
-typedef enum {DIFFUSE = 1, AMBIENT, DIFFUSE_AND_AMBIENT, COLOR_ID} LightingType;
+typedef enum {NORMAL_MODE = 1, COLOR_ID} LightingType;
 
 class Mesh
 {
@@ -39,14 +39,12 @@ public:
 	std::vector<glm::vec3> getRawVertices(){return rawVerts;}
 	std::vector<glm::vec3> getVertexNormals(){return vertexNormals;}
 	std::vector<glm::vec3> getSurfaceNormals(){return surfaceNormals;}
-	//float getShininess(){return shininess;}
-	//float setShininess(float value){shininess = value;}
 	GLuint getCurrentLighting(){return currentLighting;}
 	//Prereq, normals should have been calculated already
 	void createGLBuffer(bool smooth, GLuint* vao, int index);
 	void changeShading(ShadingType shading);
 	ShadingType getCurrentShading(){return currentShading;}
-	void setLighting(LightingType lighting, bool specular);
+	void setLighting(LightingType lighting);
 
 	void translate(glm::vec3& offset);
 	void rotateSelf(glm::vec3& offset, bool positive=true);
@@ -65,16 +63,13 @@ public:
 	void scaleCenter(glm::vec3& scaleFactor);
 	void drawBoundingBox(){drawBox = true;}
 	void removeBoundingBox(){drawBox = false;}
-
+	void setDiffuse(glm::vec4 lightDiffuse, glm::vec4 materialDiffuse);
+	void setSpecular(glm::vec4 materialDiffuse, float shininess);
 	bool colorMatch(unsigned char *color);
 	void setupShader(GLuint& program, Camera* camera);
 	glm::vec4 getSize(){return size;}
 	glm::vec3 getCenter(){return currentCenter;}
 	void setWireframe(bool value){wireframe = value;}
-	//TODO
-//	void addAnimation(Animation* animation_);
-	//do we need time parameter? possibly
-	//void update(int time);
 	void draw();
 	~Mesh();
 
@@ -85,11 +80,16 @@ public:
 	GLuint program;
 	int vaoIndex;
 	GLuint* vao;
-	GLuint fullLightingIndex, ambientIndex, diffuseIndex, colorKeyIndex;
+	GLuint normalModeIndex,  colorKeyIndex;
 	GLuint specularOn, specularOff;
-	GLuint subroutines[2];
+
+	GLuint subroutines[1];
 
 	GLuint vPosition, vNormal, modelView_loc, mTransformation_loc, mProjection_loc;
+	GLuint lightPosition_loc;
+	GLuint lightDiffuse_loc, materialDiffuse_loc;
+	GLuint lightSpecular_loc, materialSpecular_loc, shininess_loc;
+
 	/* Uniform Variables*/
 	glm::mat4 mTransformation;
 
@@ -106,6 +106,13 @@ private:
 	bool drawBox;
 	//Tells us to reload uniform variables.
 	bool changedUniform;
+	/*Colors*/
+	glm::vec4 materialDiffuse;
+	glm::vec4 lightDiffuse;
+	glm::vec4 lightPosition;
+	glm::vec4 lightSpecular;
+	glm::vec4 materialSpecular;
+	float shininess;
 
 	glm::mat4 mTranslation;
 	glm::mat4 mRotation;

@@ -16,10 +16,13 @@ public:
 
 	Camera(CameraType cameraType, glm::mat4 projectionMatrix);
 
-	void lookAt(glm::vec3 point);
-	void translate(glm::vec3 offset);
-	void moveTo(glm::vec3 point);
+	void lookAt(glm::vec3& point);
+	void translate(glm::vec3& offset);
+	void moveTo(glm::vec3& point);
 	void scale(float zoomFactor);
+	void rotate(glm::vec3& rotation);
+	void rotateAbout(glm::vec3 rotation, glm::vec3 point);
+	glm::mat4 getInverse(){return glm::inverse(mView);};
 	glm::vec3 windowToWorld(glm::vec3 winCoord, glm::vec4 viewPort);
 
 	glm::vec3 getPosition(){return cameraPosition;}
