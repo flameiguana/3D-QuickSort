@@ -30,7 +30,7 @@ glm::vec3 Animation::calculateStep(float t){
 				return (a * (float)pow(2, -10 * t) * (float)sin( (t * duration - s) * (2 * PI)/ p ) + changeInValue + start);
 			}
 		case QUAD_OUT:
-			return -changeInValue * (t /= duration) * (t - 2) + start;
+			return (-changeInValue) * (t - 2) * (t /= duration)  + start;
 		case SINE_OUT:
 			return changeInValue * (float) sin(t/duration * (PI/2.0f)) + start;
 		case NONE:

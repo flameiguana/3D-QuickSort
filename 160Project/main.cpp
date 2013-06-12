@@ -22,7 +22,7 @@
 #include <AntTweakBar.h>
 
 int WINDOW_BORDER;
-const int HEIGHT = 800;
+const int HEIGHT = 900;
 int winWidth;
 int winHeight;
 
@@ -31,14 +31,14 @@ Camera* globalCamera;
 TransformMode currentTransform;
 //Initialize the static variable.
 unsigned char Mesh::globalColorID[3] = {0,0,0};
-
+bool frontView;
 //Allow us to create a menu for switching between diffuse, ambient, and ambient + diffuse lighting.
 const LightingType Lighting_MAX = COLOR_ID;
 LightingType currentLighting = NORMAL_MODE;
 LightingType prevLighting = NORMAL_MODE;
 float translate = 0.0;
 bool zoomMode;
-
+int nummberOfElements = 7;
 Mesh* selected;
 int pauseMenuValue = 0;
 QuickSortVisual* visualization;
@@ -48,13 +48,6 @@ void display();
 //comparator for findmax and findmin.
 inline bool compareZ(glm::vec3 &a, glm::vec3 &b) { return a.z < b.z; }
 
-//Takes a range and produces a random value whithin that range.
-float randomRanged(float a, float b) {
-	float random = ((float) rand()) / (float) RAND_MAX;
-	float diff = b - a;
-	float r = random * diff;
-	return a + r;
-}
 
 void init()
 {
@@ -64,13 +57,10 @@ void init()
 	globalCamera->moveTo(glm::vec3(1.0f, 1.0f, 1.0f));
 	//Questions: Should length of array be limited?
 	std::vector<int> array;
-	array.push_back(1);
-	array.push_back(4);
-	array.push_back(2);
-	array.push_back(5);
-	array.push_back(9);
-	array.push_back(3);
-	array.push_back(7);
+	for(int i = 0; i < nummberOfElements; i++){
+		int value = 1 +  (std::rand() % (16));
+		array.push_back(value);
+	}
 
 	visualization = new QuickSortVisual(array, globalCamera);
 	
@@ -168,6 +158,18 @@ void keyboard(unsigned char key, int x, int y)
 			//currentTransform = SCALE;
 			visualization->stepOnce();
 			break;
+		case 'f':
+		{
+			if(frontView){
+				globalCamera->moveTo(glm::vec3(1.0f, 1.0f, 1.0f));
+				frontView = false;
+			}
+			else {
+				globalCamera->moveTo(glm::vec3(0.0f, 0.0f, 1.0f));
+				frontView = true;
+			}
+		}
+		break;
 		case 't':
 			currentTransform = TRANSLATE;
 			break;
@@ -271,7 +273,7 @@ int main(int argc, char **argv)
 	srand ( unsigned ( std::time(0) ) );
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH);
-	glutInitWindowSize(800, HEIGHT);
+	glutInitWindowSize(900, HEIGHT);
 	glutCreateWindow("160 Project Prototype");
 	glutDisplayFunc(display);
 	glutMouseFunc(mouseSelect);

@@ -475,7 +475,7 @@ void Mesh::setupShader(GLuint _program, Camera* camera_){
 
 	const float maxValue = 255.0;
 	//This stuff is hard coded.-------------
-	glm::vec4 materialAmbient(.3f, .3f, .3f, 1.0f);
+	glm::vec4 materialAmbient(.5f, .5f, .5f, 1.0f);
 	materialSpecular = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 
 	glm::vec4 lightAmbient(0.5f, 0.5f, 0.5f, 1.0f);

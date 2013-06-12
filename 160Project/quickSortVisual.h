@@ -6,6 +6,7 @@
 #include <vector>
 #include <stack>
 #include <list>
+#include <cmath>
 
 class QuickSortVisual{
 public:
@@ -30,6 +31,7 @@ private:
 	Camera* camera;
 	Mesh* compareIndicator;
 	Mesh* indexIndicator;
+	Mesh* blank;
 	float boxWidth, height, yScale;
 	GLuint vao[55];
 	std::vector<GLuint> shaderPrograms;
@@ -38,6 +40,7 @@ private:
 	//a unit of animation, can use this to dynamically change animation speed depending on distance traveled
 	float animationDuration;
 	int lastTime, myTime;
+	int previousScanner;
 	int pivotIndex;
 	bool paused;
 	
@@ -48,8 +51,8 @@ private:
 	void updateAnimations(int time);
 	void focus(int a, int b);
 	void markPivot(int pivot);
-	void moveCompareIndicator(int location, bool animated = true);
-	void moveIndexIndicator(int locatoin, bool animated = true);
+	void moveCompareIndicator(int original, int destination, bool animated = true);
+	void moveIndexIndicator(int location, bool delay,  bool animated = true);
 	void quickSortStep(int& left, int& right, int& step, int& scanner);
 	void makeObjects(float height);
 };

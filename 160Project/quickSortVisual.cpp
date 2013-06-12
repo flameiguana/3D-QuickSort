@@ -26,24 +26,27 @@ void QuickSortVisual::makeObjects(float height){
 }
 
 //Moves the top block to indicate what is the last element not less than pivot.
-void QuickSortVisual::moveCompareIndicator(int location, bool animated)
+void QuickSortVisual::moveCompareIndicator(int original, int destination,  bool animated)
 {
+	std::cout << "Destination is " << destination << std::endl;
 
-	glm::vec3 goalPosition = objects.at(location)->getCenter();
-	goalPosition.y +=  objects.at(location)->getSize().y*.5f + boxWidth;
-	Animation move(Animation::POSITION);
+	glm::vec3 goalPosition = objects.at(destination)->getCenter();
+	goalPosition.y +=  objects.at(destination)->getSize().y*.5f + boxWidth;
 
 	if(!animated){
 		compareIndicator->moveTo(goalPosition);
 		return;
 	}
-
+	Animation move(Animation::POSITION);
+	float travelTime = animationDuration* std::abs(original - destination);
 	move.setStart(compareIndicator, compareIndicator->getCenter());
-	move.setGoal(goalPosition, animationDuration * 1.5f, Animation::ELASTIC_OUT);
+	move.setGoal(goalPosition, travelTime, Animation::ELASTIC_OUT);
 	animations.push_back(move);
 }
 
-void QuickSortVisual::moveIndexIndicator(int location, bool animated){
+//bool delay
+void QuickSortVisual::moveIndexIndicator(int location, bool delay, bool animated){
+
 	glm::vec3 goalPosition = objects.at(location)->getCenter();
 	goalPosition.z +=  boxWidth;
 	goalPosition.y = -.5f;
@@ -54,20 +57,27 @@ void QuickSortVisual::moveIndexIndicator(int location, bool animated){
 		indexIndicator->moveTo(goalPosition);
 		return;
 	}
-	//float duration = 
+	//float travelTime = animationDuration* std::abs(a - b)*.75f;
 	move.setStart(indexIndicator, indexIndicator->getCenter());
-	move.setGoal(goalPosition, animationDuration * 1.5f, Animation::ELASTIC_OUT);
+	move.setGoal(goalPosition, animationDuration, Animation::QUAD_OUT);
+	if(delay){
+		Animation dummy(Animation::POSITION);
+		dummy.setStart(blank, blank->getCenter());
+		dummy.setGoal(blank->getCenter(), animationDuration, Animation::NONE);
+		move.chain(dummy);
+	}
 	animations.push_back(move);
 }
 
 QuickSortVisual::QuickSortVisual(std::vector<int> values, Camera* camera):camera(camera){
 	array = values;
-	animationDuration = 800;
+	animationDuration = 1000;
 	poppedStack = false;
 	havePivot = false;
 	finished = false;
 	vaoIndex = 0;
 	left = 0;
+	previousScanner = 0;
 	step = -1;
 	scanner = 0;
 	paused = false;
@@ -107,9 +117,11 @@ QuickSortVisual::QuickSortVisual(std::vector<int> values, Camera* camera):camera
 	indexIndicator->scaleCenter(glm::vec3(boxWidth, boxWidth/4.0f, boxWidth));
 	indexIndicator->setDiffuse(glm::vec4(105/255.0f, 7/255.0f, 159/255.0f, 1.0f));
 	
+	//Okay, not time to implement timer, so using this.
+	blank = new Mesh("cube.coor", "cube.poly");
 
-	moveCompareIndicator(0, false);
-	moveIndexIndicator(0, false);
+	moveCompareIndicator(0, 0, false);
+	moveIndexIndicator(0, false, false);
 	//Initialize quicksort algoritmn
 	right = array.size() - 1;
 	stack.push(left);
@@ -173,14 +185,15 @@ void QuickSortVisual::swapAnimation(int a, int b){
 	glm::vec3 aPosition = objects.at(a)->getCenter();
 	glm::vec3 bPosition = objects.at(b)->getCenter();
 	float z = aPosition.z;
-
+	//Movement depends on how far things are.
+	float travelTime = animationDuration* std::abs(a - b)*.75f;
 	Animation offsetA(Animation::POSITION);
 	offsetA.setStart(meshA, aPosition);
 	offsetA.setGoal(glm::vec3(aPosition.x, aPosition.y, z + boxWidth), animationDuration/2);
 	
 	Animation switchA(Animation::POSITION);
 	switchA.setStart(meshA, glm::vec3(aPosition.x, aPosition.y, z + boxWidth));
-	switchA.setGoal(glm::vec3(bPosition.x, aPosition.y, z + boxWidth), animationDuration);
+	switchA.setGoal(glm::vec3(bPosition.x, aPosition.y, z + boxWidth), travelTime);
 
 	Animation returnA(Animation::POSITION);
 	returnA.setStart(meshA, glm::vec3(bPosition.x, aPosition.y, z + boxWidth));
@@ -192,7 +205,7 @@ void QuickSortVisual::swapAnimation(int a, int b){
 
 	Animation switchB(Animation::POSITION);
 	switchB.setStart(meshB, glm::vec3(bPosition.x, bPosition.y, z - boxWidth));
-	switchB.setGoal(glm::vec3(aPosition.x, bPosition.y, z - boxWidth), animationDuration);
+	switchB.setGoal(glm::vec3(aPosition.x, bPosition.y, z - boxWidth), travelTime);
 
 	Animation returnB(Animation::POSITION);
 	returnB.setStart(meshB, glm::vec3(aPosition.x, bPosition.y, z - boxWidth));
@@ -214,7 +227,9 @@ int QuickSortVisual::partitionAnimationStep(int left, int right, int step, int& 
 	
 	if(step == 0)
 	markPivot(pivotIndex);
-	moveCompareIndicator(scanner);
+	if(previousScanner != scanner)
+		moveCompareIndicator(previousScanner, scanner);
+	previousScanner = scanner;
 	if(step == -1){
 		markPivot(pivotIndex);
 		swap(pivotIndex, right);
@@ -224,21 +239,23 @@ int QuickSortVisual::partitionAnimationStep(int left, int right, int step, int& 
 	int pivotValue = array.at(right);
 	//instead of having for loop, iterate by steps
 	int i = left + step;
-	moveIndexIndicator(i);
 	if(i < right){
 		std::cout << "Check if scanner <= pivotValue. " << std::endl;
 		if(array.at(i) <= pivotValue){
-			//highlight swapped ones
-			//if i == scanner, don't do swap animation
+			//delay so that swapping can go after
+			moveIndexIndicator(i, true);
+			//chain this move index before swapping
 			swapAnimation(i, scanner);
 			std::cout << "Swapping array[" << i << "] with array[" << scanner <<"]" << std::endl;
 			swap(i, scanner);
 			scanner++;
-			
 		}
+		else //no need for a delay.
+			moveIndexIndicator(i, false);
 	}
-	//i == rightfi
+
 	else {
+		moveIndexIndicator(i, true);
 		swapAnimation(right, scanner);
 		swap(right, scanner);
 	}
