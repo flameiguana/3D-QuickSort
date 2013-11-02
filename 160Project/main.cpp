@@ -293,6 +293,7 @@ int main(int argc, char **argv)
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable (GL_TEXTURE_2D);
 	glewExperimental = GL_TRUE;
+	glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_CONTINUE_EXECUTION);
 	glewInit();
 
 	//glutMouseFunc((GLUTmousebuttonfun)TwEventMouseButtonGLUT);
