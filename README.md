@@ -1,7 +1,10 @@
 3D-QuickSort
 ============
 
-Am OpenGL visualization of the Quicksort algorithm. Does not make as much use of 3D space as I planned for, but it has the basics down.
+An OpenGL visualization of the Quicksort algorithm. Does not make as much use of 3D space as I planned for, but it has the basics down.
+
+
+Check out Release.zip to run. Contact me if you are interested in compiling.
 
 Uses the following external libraries:
 AntTweakBar (for menu)
