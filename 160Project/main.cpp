@@ -135,7 +135,7 @@ void mouseSelect(int button, int state, int x, int y){
 				selected = *i;
 		}
 		if(selected != NULL){
-			//iniitalize "previous"
+			//initalize "previous"
 			winCoordsOld = glm::vec3(prevX, prevY, depth);
 			objCoordsOld = globalCamera->windowToWorld(winCoordsOld, viewPort);
 			viewPort = glm::vec4(0.0f, 0.0f, winWidth, winHeight);
