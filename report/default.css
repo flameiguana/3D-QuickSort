@@ -1,0 +1,15 @@
+
+#container
+{
+	width: 80%;
+	margin: 0 auto;
+}
+h1{text-align: center;}
+h2
+{
+	text-align: center;
+	margin-top: 0em;
+}
+h3{margin-bottom:0em;}
+p {margin-top:0em;} 
+dl {margin-top:0em;}

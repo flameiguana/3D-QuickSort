@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<link rel="stylesheet" type="text/css" href="default.css">
+	<title>160 Project Report</title>
+</head>
+<body>
+	<div id="container">
+		<h1>Sorting Algorithmn Visualization</h1>
+		<h2>160 Project Report - Gerardo Perez</h2>
+		<h3>Overview</h3>
+		<p>Here we have a visualization of QuickSort in OpenGL. I completed a big portion of what I originally planned for, but this still isn't polished enough to serve as a learning tool. Nevertheless, for someone who is studying the algorithmn already, the visuals might help.</p>
+		<p>The pseudocode below is a representation of the in-place Quicksort algorithmn that I based my project on.</p>
+		<pre>
+		//finishes when left == right
+		Quicksort(Array, left, right)
+			if(left &lt; right)
+				pivot = Partition(A, left, right)
+				Quicksort(Array, left, pivot - 1) //Left Side
+				Quicksort(Array, pivot + 1, right) //Right Side
+
+		//Splits everything between the indicies "left" and "right" into
+		//two parts. Everything below a certain index (storeIndex) is equal to or less than it, everything to the right is greater.
+		Partition(Array, left, right)
+			//I chose to make the pivot the rightmost element.
+			pivotValue = Array.at(right)
+			//This is the index that doesnt move until we find something equal or less than our pivot.
+			storeIndex = left
+			for i = left to right - 1
+				if A.at(i) &lt;= pivotValue
+					swap A.at(storeIndex) with A.at(i)
+					storeIndex++ //only increment if swapped
+			//Here the pivot is always swapped to storeIndex
+			swap Array.at(storeIndex) with Array.at(right) 
+			return storeIndex; //in some cases storeIndex = the original pivot, but usually it differs
+		</pre>
+		<p>I eventually had to write an iterative version of Quicksort that could be computed step by step to allow for pausing and stepping (the above psuedocode is recursive). In hindsight it would have been better to generate animations at the beginning of the program that could be played back in order, although that doesn't sound like a simple task either. </p>
+		<h3>Some Images</h3>
+		<img src="img/screen1.PNG">
+		<img src="img/screen2.PNG">
+		<p>The blocks that aren't transparent are the ones that are currently being partitioned. The block with the arrow points at storeIndex. The purple block at the bottom points at i in the Partition function.</p>
+
+		<h3>Usage</h3>
+		<ol>
+			<li><b>Space</b> Pauses and Resumes the Animation</li>
+			<li><b>S</b> steps through the animation. This is partially working, up until when the subarray is sorted. Then you have to pause and unpause a few times to get it started again.</li> 
+			<li>Hold the right mouse button and drag to zoom out.</li>
+		</ol> 
+		<h3>Bugs</h3>
+		<ul>
+			<li>After partition has been completed for a subarray, you can't step anymore. Pause and unpause to resume playback.</li>
+		</ul>
+		</div>
+</body>
+</html>

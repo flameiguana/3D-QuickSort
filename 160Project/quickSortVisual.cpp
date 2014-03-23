@@ -25,7 +25,8 @@ void QuickSortVisual::makeObjects(float height){
 	}
 }
 
-//Moves the top block to indicate what is the last element not less than pivot.
+//Creates an animation that moves the top block to indicate what is the last element not less than pivot
+//and therefore needs to be swapped.
 void QuickSortVisual::moveCompareIndicator(int original, int destination,  bool animated)
 {
 	std::cout << "Destination is " << destination << std::endl;
@@ -44,7 +45,7 @@ void QuickSortVisual::moveCompareIndicator(int original, int destination,  bool 
 	animations.push_back(move);
 }
 
-//bool delay
+//Creates an animation that moves bottom block to indicate where our array index is pointing at.
 void QuickSortVisual::moveIndexIndicator(int location, bool delay, bool animated){
 
 	glm::vec3 goalPosition = objects.at(location)->getCenter();
@@ -92,7 +93,7 @@ QuickSortVisual::QuickSortVisual(std::vector<int> values, Camera* camera):camera
 	boxWidth =  1.0f/array.size()/2.0f;
 	
 	for(auto i = array.begin(); i < array.end(); i++){
-		// this is really only necessary for picking, switch to one shader later
+		//TODO: For efficiency, we shouldnt be initializing the same file over and over, but instead find a way to copy shader.
 		GLuint shader = Angel::InitShader("vshader.vert", "fshader.frag");
 		shaderPrograms.push_back(shader);
 
@@ -137,6 +138,7 @@ void QuickSortVisual::swap(int a, int b){
 	objects.at(b) = tempMesh;
 }
 
+//Marks the mesh of the pivot value to be a different color.
 void QuickSortVisual::markPivot(int i){
 	//These are supposed to be materials for turquoise
 	objects.at(i)->setSpecular(glm::vec4(0.297254f,	0.30829f, 0.306678f, 1.0f), .1f*128.0f);
@@ -149,7 +151,9 @@ void QuickSortVisual::markPivot(int i){
 	*/
 }
 
-//Make this fancier later on.
+//Makes rectangles outside of focused group semi transparent. 
+//Originally wanted to copy focused group, put them forward in the z axis, 
+//and when the sorted, push them back in, replacing the unsorted ones. 
 void QuickSortVisual::focus(int a, int b){
 
 	for(int i = 0; i < objects.size(); i++){
@@ -185,11 +189,11 @@ void QuickSortVisual::swapAnimation(int a, int b){
 	glm::vec3 aPosition = objects.at(a)->getCenter();
 	glm::vec3 bPosition = objects.at(b)->getCenter();
 	float z = aPosition.z;
-	//Movement depends on how far things are.
+	//Movement time depends on how far things are.
 	float travelTime = animationDuration* std::abs(a - b)*.6f;
 	Animation offsetA(Animation::POSITION);
 	offsetA.setStart(meshA, aPosition);
-	offsetA.setGoal(glm::vec3(aPosition.x, aPosition.y, z + boxWidth), animationDuration/2);
+	offsetA.setGoal(glm::vec3(aPosition.x, aPosition.y, z + boxWidth), animationDuration/3);
 	
 	Animation switchA(Animation::POSITION);
 	switchA.setStart(meshA, glm::vec3(aPosition.x, aPosition.y, z + boxWidth));
@@ -197,11 +201,11 @@ void QuickSortVisual::swapAnimation(int a, int b){
 
 	Animation returnA(Animation::POSITION);
 	returnA.setStart(meshA, glm::vec3(bPosition.x, aPosition.y, z + boxWidth));
-	returnA.setGoal(glm::vec3(bPosition.x, aPosition.y, z), animationDuration/2);
+	returnA.setGoal(glm::vec3(bPosition.x, aPosition.y, z), animationDuration/3);
 	
 	Animation offsetB(Animation::POSITION);
 	offsetB.setStart(meshB, bPosition);
-	offsetB.setGoal(glm::vec3(bPosition.x, bPosition.y, z - boxWidth), animationDuration/2);
+	offsetB.setGoal(glm::vec3(bPosition.x, bPosition.y, z - boxWidth), animationDuration/3);
 
 	Animation switchB(Animation::POSITION);
 	switchB.setStart(meshB, glm::vec3(bPosition.x, bPosition.y, z - boxWidth));
@@ -209,7 +213,7 @@ void QuickSortVisual::swapAnimation(int a, int b){
 
 	Animation returnB(Animation::POSITION);
 	returnB.setStart(meshB, glm::vec3(aPosition.x, bPosition.y, z - boxWidth));
-	returnB.setGoal(glm::vec3(aPosition.x, bPosition.y, z), animationDuration/2);
+	returnB.setGoal(glm::vec3(aPosition.x, bPosition.y, z), animationDuration/3);
 
 	//chain sort of in reverse because of copy by value. consider changin
 	switchA.chain(returnA);
@@ -222,20 +226,31 @@ void QuickSortVisual::swapAnimation(int a, int b){
 	animations.push_back(offsetB);
 }
 
-//this will only be called when animation queue is empty;
+//Creates an animation for:
+/*
+for i = left to right - 1
+				if A.at(i) &lt;= pivotValue
+					swap A.at(storeIndex) with A.at(i)
+					storeIndex++ //only increment if swapped
+*/
+//the i in the loop is equal to step in my code
+//Note this will only be called when animation queue is empty;
 int QuickSortVisual::partitionAnimationStep(int left, int right, int step, int& scanner, int pivotIndex){
 	
 	if(step == 0)
-	markPivot(pivotIndex);
+		markPivot(pivotIndex);
 	if(previousScanner != scanner)
 		moveCompareIndicator(previousScanner, scanner);
 	previousScanner = scanner;
+	/* No idea what this is for anymore.
 	if(step == -1){
 		markPivot(pivotIndex);
 		swap(pivotIndex, right);
 		swapAnimation(pivotIndex, right);
-		return scanner;
+		return scanner; 
 	}
+	*/
+	
 	int pivotValue = array.at(right);
 	//instead of having for loop, iterate by steps
 	int i = left + step;
@@ -259,6 +274,7 @@ int QuickSortVisual::partitionAnimationStep(int left, int right, int step, int& 
 		swapAnimation(right, scanner);
 		swap(right, scanner);
 	}
+
 	return scanner;
 }
 
@@ -279,12 +295,13 @@ void QuickSortVisual::quickSortStep(int& left, int& right, int& step, int& scann
 		if(step == -1){
 			//get a random pivot
 			//pivotIndex = left + (std::rand() % (right - left + 1));
+
 			//For simplicity, always pick rightmost as pivot
 			pivotIndex = right;
 			//if we put back random, get rid of this
 			step++;
 		}
-		//This means that partitionAnimation has finished.
+		//This happens when partitionAnimation has finished.
 		if(step > right - left){ //the extra step is for first pivot switch
 			step = -1;
 			std::cout << "Pivot is " << pivot << std::endl;
@@ -328,14 +345,14 @@ void QuickSortVisual::quickSortStep(int& left, int& right, int& step, int& scann
 
 /*
 How to cycle animations:
-	call update on each one
-	if it ends and doesnt have a link to another one, destroy it
-		otherwise switch the pointer to this one to the other one.
+	Call update on each animation, passing in time
+	When an animation finishes playing and it doesnt have a link to another animation, destroy it
+	If it does have linked animations, store in temporary list and then join the animation list with the temp list.
 
 */
 void QuickSortVisual::updateAnimations(int time){
 	auto i = animations.begin();
-	//dont want to call update on the linked animations.
+	
 	std::list<Animation> links;
 	while(i != animations.end()){
 		// std::cout << "still animating" << std::endl;
@@ -343,7 +360,7 @@ void QuickSortVisual::updateAnimations(int time){
 		if(hasEnded){
 			if((*i).containsLink())
 				links.push_back(*(*i).getLink()); //need to make sure it doesnt activate.
-			i = animations.erase(i); //update iterator to be after erased oneS
+			i = animations.erase(i); //set iterator to the element that follows the one we erased.
 		}
 		else {
 			(*i).update(time);
@@ -383,7 +400,7 @@ void QuickSortVisual::update(int realTime){
 	}
 	lastTime = realTime;
 }
-
+//Draw the actual meshes.
 void QuickSortVisual::draw(){
 	compareIndicator->draw();
 	indexIndicator->draw();
