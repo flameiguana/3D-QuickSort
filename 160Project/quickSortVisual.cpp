@@ -33,7 +33,7 @@ void QuickSortVisual::moveCompareIndicator(int original, int destination,  bool 
 	std::cout << "Destination is " << destination << std::endl;
 
 	glm::vec3 goalPosition = objects.at(destination)->getCenter();
-	goalPosition.y +=  objects.at(destination)->getSize().y*.5f + boxWidth;
+	goalPosition.y +=  objects.at(destination)->getSize().y*.5f + boxWidth * .75;
 
 	if(!animated){
 		compareIndicator->moveTo(goalPosition);
@@ -63,6 +63,7 @@ void QuickSortVisual::moveIndexIndicator(int location, bool delay, bool animated
 	move.setStart(indexIndicator, indexIndicator->getCenter());
 	move.setGoal(goalPosition, animationDuration, Animation::QUAD_OUT);
 	if(delay){
+		///adds a blank animation to serve as a wait time. Simplest thing I could do in a pinch
 		Animation dummy(Animation::POSITION);
 		dummy.setStart(blank, blank->getCenter());
 		dummy.setGoal(blank->getCenter(), animationDuration, Animation::NONE);
@@ -72,13 +73,13 @@ void QuickSortVisual::moveIndexIndicator(int location, bool delay, bool animated
 }
 
 //how many ms it takes to go across whole array
-const float QuickSortVisual::ANIMATION_UNIT = 3000;
+const float QuickSortVisual::ANIMATION_UNIT = 3500;
 
 QuickSortVisual::QuickSortVisual(std::vector<int>& values, Camera* camera):camera(camera){
 	array = values;
 	animationScale = 1;
 	float elements = (float)values.size();
-	animationDuration = ANIMATION_UNIT / elements * animationScale;
+	scaleSpeed(100);
 	poppedStack = false;
 	havePivot = false;
 	finished = false;
@@ -201,7 +202,7 @@ void QuickSortVisual::swapAnimation(int a, int b){
 	float travelTime = animationDuration* std::abs(a - b);
 	Animation offsetA(Animation::POSITION);
 	offsetA.setStart(meshA, aPosition);
-	offsetA.setGoal(glm::vec3(aPosition.x, aPosition.y, z + boxWidth), animationDuration/3);
+	offsetA.setGoal(glm::vec3(aPosition.x, aPosition.y, z + boxWidth), animationDuration);
 	
 	Animation switchA(Animation::POSITION);
 	switchA.setStart(meshA, glm::vec3(aPosition.x, aPosition.y, z + boxWidth));
@@ -209,11 +210,11 @@ void QuickSortVisual::swapAnimation(int a, int b){
 
 	Animation returnA(Animation::POSITION);
 	returnA.setStart(meshA, glm::vec3(bPosition.x, aPosition.y, z + boxWidth));
-	returnA.setGoal(glm::vec3(bPosition.x, aPosition.y, z), animationDuration/3);
+	returnA.setGoal(glm::vec3(bPosition.x, aPosition.y, z), animationDuration);
 	
 	Animation offsetB(Animation::POSITION);
 	offsetB.setStart(meshB, bPosition);
-	offsetB.setGoal(glm::vec3(bPosition.x, bPosition.y, z - boxWidth), animationDuration/3);
+	offsetB.setGoal(glm::vec3(bPosition.x, bPosition.y, z - boxWidth), animationDuration);
 
 	Animation switchB(Animation::POSITION);
 	switchB.setStart(meshB, glm::vec3(bPosition.x, bPosition.y, z - boxWidth));
@@ -221,7 +222,7 @@ void QuickSortVisual::swapAnimation(int a, int b){
 
 	Animation returnB(Animation::POSITION);
 	returnB.setStart(meshB, glm::vec3(aPosition.x, bPosition.y, z - boxWidth));
-	returnB.setGoal(glm::vec3(aPosition.x, bPosition.y, z), animationDuration/3);
+	returnB.setGoal(glm::vec3(aPosition.x, bPosition.y, z), animationDuration);
 
 	//chain sort of in reverse because of copy by value. consider changin
 	switchA.chain(returnA);

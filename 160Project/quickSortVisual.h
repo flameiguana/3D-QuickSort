@@ -17,7 +17,7 @@ public:
 	void setPause(bool value){paused = value;}
 	//scales animation speed. read as a percentange
 	void scaleSpeed(float speed){
-		animationScale = speed / 100;
+		animationScale = 100 / speed;
 		animationDuration = ANIMATION_UNIT  / (float)array.size() * animationScale;
 	}
 	void stepOnce(){stepMode = true;}
