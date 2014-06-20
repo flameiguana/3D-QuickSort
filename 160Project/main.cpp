@@ -22,7 +22,8 @@
 #include <AntTweakBar.h>
 
 int WINDOW_BORDER;
-const int HEIGHT = 900;
+const int WIDTH = 1024;
+const int HEIGHT = 768;
 int winWidth;
 int winHeight;
 
@@ -52,11 +53,15 @@ void display();
 //comparator for findmax and findmin.
 inline bool compareZ(glm::vec3 &a, glm::vec3 &b) { return a.z < b.z; }
 
+//we want a unit of screen space.
+float orthoWidth = 1.0f;
+float orthoHeight = 1.0f; //this is fixed, we scale width by aspect ratio
 
+float aspectRatio = WIDTH / HEIGHT;
 void init()
 {
 	//globalCamera = glm::perspective(35.0f, 1.0f, 0.01f, 200.0f); 
-	glm::mat4 ortho = glm::ortho(-0.5f, 0.5f, -0.5f, 0.5f, 0.01f, 100.0f);
+	glm::mat4 ortho = glm::ortho(-orthoWidth  /2.0f * aspectRatio , orthoWidth * aspectRatio / 2.0f, -orthoHeight / 2.0f ,  orthoHeight / 2.0f, 0.01f, 100.0f);
 	globalCamera = new Camera(ORTHOGRAPHIC, ortho);
 	globalCamera->moveTo(glm::vec3(1.0f, 1.0f, .8f));
 	//Questions: Should length of array be limited?
@@ -289,9 +294,10 @@ int main(int argc, char **argv)
 	std::cin >> nummberOfElements;
 	srand ( unsigned ( std::time(0) ) );
 	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH);
-	glutInitWindowSize(900, HEIGHT);
+	glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH | GLUT_DOUBLE);
+	glutInitWindowSize(WIDTH, HEIGHT);
 	glutCreateWindow("3D QuickSort Prototype");
+
 	glutDisplayFunc(display);
 	glutTimerFunc(updateWaitPeriod, update, 0);
 	glutMouseFunc(mouseSelect);
