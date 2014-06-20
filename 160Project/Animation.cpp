@@ -49,15 +49,13 @@ void Animation::update(int time){
 		startTime = time;
 		started = true;
 	}
+
+	//Tells us how far into the animation we should play
 	float difference = time - startTime;
 	
-	if(difference > duration){
+	if(difference >= duration){
 		ended = true;
-		//take parameters from chained one to this one
-		//or let client handle traversing chain
-		//or have an animation manager class that can start animations. That way mesh is only passed once.
-		//bad thins is that you can't use the same animation on multiple variables witout perhaps some ugliness.
-		return;
+		difference = duration; //snap to end position
 	}
 
 	switch(animationType){
