@@ -1,6 +1,7 @@
 #include "QuickSortVisual.h"
 
 //TODO: Allow custom z axis location
+//Creates the necessasry meshes
 void QuickSortVisual::makeObjects(float height){
 	float startingX = -.5f;
 	float positionY = -.5f;
@@ -39,7 +40,7 @@ void QuickSortVisual::moveCompareIndicator(int original, int destination,  bool 
 		return;
 	}
 	Animation move(Animation::POSITION);
-	float travelTime = animationDuration* std::abs(original - destination)*.60f;
+	float travelTime = animationDuration* std::abs(original - destination);
 	move.setStart(compareIndicator, compareIndicator->getCenter());
 	move.setGoal(goalPosition, travelTime, Animation::ELASTIC_OUT);
 	animations.push_back(move);
@@ -60,19 +61,24 @@ void QuickSortVisual::moveIndexIndicator(int location, bool delay, bool animated
 	}
 	//float travelTime = animationDuration* std::abs(a - b)*.75f;
 	move.setStart(indexIndicator, indexIndicator->getCenter());
-	move.setGoal(goalPosition, animationDuration*.6f, Animation::QUAD_OUT);
+	move.setGoal(goalPosition, animationDuration, Animation::QUAD_OUT);
 	if(delay){
 		Animation dummy(Animation::POSITION);
 		dummy.setStart(blank, blank->getCenter());
-		dummy.setGoal(blank->getCenter(), animationDuration*.6f, Animation::NONE);
+		dummy.setGoal(blank->getCenter(), animationDuration, Animation::NONE);
 		move.chain(dummy);
 	}
 	animations.push_back(move);
 }
 
-QuickSortVisual::QuickSortVisual(std::vector<int> values, Camera* camera):camera(camera){
+//how many ms it takes to go across whole array
+const float QuickSortVisual::ANIMATION_UNIT = 3000;
+
+QuickSortVisual::QuickSortVisual(std::vector<int>& values, Camera* camera):camera(camera){
 	array = values;
-	animationDuration = 900;
+	animationScale = 1;
+	float elements = (float)values.size();
+	animationDuration = ANIMATION_UNIT / elements * animationScale;
 	poppedStack = false;
 	havePivot = false;
 	finished = false;
@@ -85,7 +91,9 @@ QuickSortVisual::QuickSortVisual(std::vector<int> values, Camera* camera):camera
 	myTime = 0;
 	stepMode = false;
 	lastTime = 0;
-	glGenVertexArrays(55, vao);
+	//allocate vertex array
+	vao = new GLuint[values.size() + 3];
+	glGenVertexArrays(values.size() + 3, vao);
 
 	//Compute various dimensions
 	height = .75f;
@@ -118,7 +126,7 @@ QuickSortVisual::QuickSortVisual(std::vector<int> values, Camera* camera):camera
 	indexIndicator->scaleCenter(glm::vec3(boxWidth, boxWidth/4.0f, boxWidth));
 	indexIndicator->setDiffuse(glm::vec4(105/255.0f, 7/255.0f, 159/255.0f, 1.0f));
 	
-	//Okay, not time to implement timer, so using this.
+	//Okay, no time to implement timer, so using this.
 	blank = new Mesh("cube.coor", "cube.poly");
 
 	moveCompareIndicator(0, 0, false);
@@ -190,7 +198,7 @@ void QuickSortVisual::swapAnimation(int a, int b){
 	glm::vec3 bPosition = objects.at(b)->getCenter();
 	float z = aPosition.z;
 	//Movement time depends on how far things are.
-	float travelTime = animationDuration* std::abs(a - b)*.6f;
+	float travelTime = animationDuration* std::abs(a - b);
 	Animation offsetA(Animation::POSITION);
 	offsetA.setStart(meshA, aPosition);
 	offsetA.setGoal(glm::vec3(aPosition.x, aPosition.y, z + boxWidth), animationDuration/3);
@@ -407,4 +415,10 @@ void QuickSortVisual::draw(){
 	for(auto i = objects.begin(); i < objects.end(); i++){
 		(*i)->draw();
 	}
+}
+
+QuickSortVisual::~QuickSortVisual()
+{
+	delete[] vao;
+	vao = NULL;
 }

@@ -43,8 +43,9 @@ Mesh* selected;
 int pauseMenuValue = 0;
 QuickSortVisual* visualization;
 
-unsigned int speed = 900;
-unsigned int oldSpeed = 900;
+//Used for custom animation speed (%)
+unsigned int speed = 100;
+unsigned int oldSpeed = 100;
 
 void display();
 
@@ -84,7 +85,7 @@ void update(int t)
 	}
 	visualization->update(time);
 	if(speed != oldSpeed){
-		visualization->setSpeed(speed);
+		visualization->scaleSpeed(speed);
 	}
 	glutPostRedisplay(); //tells glut we need to redraw, calls display function
 	glutTimerFunc(updateWaitPeriod, update, 0);
@@ -303,7 +304,7 @@ int main(int argc, char **argv)
 	glEnable (GL_TEXTURE_2D);
 	glewExperimental = GL_TRUE;
 	glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_CONTINUE_EXECUTION);
-	glewInit();
+	
 
 	//glutMouseFunc((GLUTmousebuttonfun)TwEventMouseButtonGLUT);
 	glutMotionFunc(activeMouse);
@@ -313,7 +314,7 @@ int main(int argc, char **argv)
 	atexit(Terminate);
 	//TwGLUTModifiersFunc(glutGetModifiers);
 	glutReshapeFunc(reshape);
-	
+	glewInit();
 	//Initialize AntTweakBar
 	TwInit(TW_OPENGL, NULL);
 	TwBar* bar = TwNewBar("OptionBar");
@@ -326,7 +327,8 @@ int main(int argc, char **argv)
 		TwAddVarRW(bar, "Lighting", lightingEnum, &currentLighting, " keyIncr=',' keyDecr='.' help='Select Lighting Type.' ");
 	}
 	*/
-	TwAddVarRW(bar, "Animation Time", TW_TYPE_UINT32, &speed, " min=1 key='+' ");
+	TwAddVarRW(bar, "Rate (%)", TW_TYPE_UINT32, &speed, " min=1 key='+' ");
+
 
 	init();
 

@@ -10,11 +10,16 @@
 
 class QuickSortVisual{
 public:
-	QuickSortVisual(std::vector<int> values, Camera* camera);
+	QuickSortVisual(std::vector<int>& values, Camera* camera);
+	~QuickSortVisual();
 	void update(int time);
 	void draw();
 	void setPause(bool value){paused = value;}
-	void setSpeed(float speed){animationDuration = speed;}
+	//scales animation speed. read as a percentange
+	void scaleSpeed(float speed){
+		animationScale = speed / 100;
+		animationDuration = ANIMATION_UNIT  / (float)array.size() * animationScale;
+	}
 	void stepOnce(){stepMode = true;}
 	std::vector<Mesh*> * getObjects(){return &objects;}
 
@@ -34,12 +39,14 @@ private:
 	Mesh* indexIndicator;
 	Mesh* blank;
 	float boxWidth, height, yScale;
-	GLuint vao[55];
+	GLuint* vao;
 	std::vector<GLuint> shaderPrograms;
 	int vaoIndex;
 
 	//a unit of animation, can use this to dynamically change animation speed depending on distance traveled
+	static const float ANIMATION_UNIT;
 	float animationDuration;
+	float animationScale;
 	int lastTime, myTime;
 	int previousScanner;
 	int pivotIndex;
