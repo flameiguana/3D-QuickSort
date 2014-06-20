@@ -55,7 +55,10 @@ void Animation::update(int time){
 	
 	if(difference >= duration){
 		ended = true;
-		difference = duration; //snap to end position
+		if(duration == 0) //exit out if duration was zero
+			return;
+		else
+			difference = duration; //snap to end position
 	}
 
 	switch(animationType){
