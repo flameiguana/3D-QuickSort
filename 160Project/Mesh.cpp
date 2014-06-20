@@ -505,7 +505,7 @@ void Mesh::setupShader(GLuint _program, Camera* camera_){
 	glUniform4fv(materialDiffuse_loc, 1, glm::value_ptr(materialDiffuse));
 	glUniform4fv(lightSpecular_loc, 1, glm::value_ptr(lightSpecular));
 	glUniform4fv(materialSpecular_loc, 1, glm::value_ptr(materialSpecular));
-	//Dont know why this only works when negative. 4th element is zero to signify directional
+	//4th element is zero to signify directional
 	lightPosition = glm::vec4(0.0, 0.8, 1.0, 0.0);
 
 	glUniform4fv(lightPosition_loc, 1, glm::value_ptr(lightPosition));

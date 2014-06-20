@@ -71,7 +71,10 @@ void init()
 }
 
 //---------Glut Callback Functions------------
-void display()
+
+
+GLuint updateWaitPeriod = 12; //about 80 fps
+void update(int t)
 {
 	int time = glutGet(GLUT_ELAPSED_TIME);
 	if(currentLighting != prevLighting){
@@ -83,6 +86,12 @@ void display()
 	if(speed != oldSpeed){
 		visualization->setSpeed(speed);
 	}
+	glutPostRedisplay(); //tells glut we need to redraw, calls display function
+	glutTimerFunc(updateWaitPeriod, update, 0);
+}
+
+void display()
+{
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
 	glClearDepth(1.0);
@@ -90,7 +99,7 @@ void display()
 	visualization->draw();
 	TwDraw();
 	glutSwapBuffers();
-	glutPostRedisplay();
+	
 }
 
 glm::vec4 viewPort;
@@ -103,7 +112,6 @@ GLfloat depth;
 void mouseSelect(int button, int state, int x, int y){
 	//Send event to atb. If it didn't handle it, then call our own code.
 	if(!TwEventMouseButtonGLUT(button, state, x, y)){
-		zoomMode = false;
 		selected = NULL;
 		zoomMode = false;
 		prevX = x;
@@ -114,7 +122,6 @@ void mouseSelect(int button, int state, int x, int y){
 			zoomMode = true;
 			return;
 		}
-		//else if(button = GLUT_LEFT_BUTTON) 
 
 		unsigned char color[3];
 		//Turn off lighting.
@@ -197,11 +204,12 @@ void passiveMouse(int x, int y){
 const float SCALE_FACTOR = .02f;
 const float ROTATION_FACTOR = 3.0f;
 
+//Use for interacting with camera and moving around meshes.
 void activeMouse(int x, int y){
-	if(!TwEventMouseMotionGLUT(x, y)){
+	if(!TwEventMouseMotionGLUT(x, y)){ //pass to ui, if ui doesnt handle, we do
 		float differenceY = (float)(winHeight - y - 1 - prevY);
 		float differenceX = (float)(prevX - x);
-	float scale, rotation;
+		float scale, rotation;
 		bool positive = true;
 		if(zoomMode == true){
 			float zoomFactor;
@@ -282,8 +290,9 @@ int main(int argc, char **argv)
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH);
 	glutInitWindowSize(900, HEIGHT);
-	glutCreateWindow("160 Project Prototype");
+	glutCreateWindow("3D QuickSort Prototype");
 	glutDisplayFunc(display);
+	glutTimerFunc(updateWaitPeriod, update, 0);
 	glutMouseFunc(mouseSelect);
 	//glutCreateMenu(NULL);
 	glEnable(GL_DEPTH_TEST);
@@ -320,6 +329,7 @@ int main(int argc, char **argv)
 	TwAddVarRW(bar, "Animation Time", TW_TYPE_UINT32, &speed, " min=1 key='+' ");
 
 	init();
+
 	glutMainLoop();
 	return 0;
 }

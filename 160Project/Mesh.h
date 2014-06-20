@@ -145,7 +145,6 @@ private:
 	std::vector<glm::vec3> vertexNormals;
 
 	std::vector<glm::vec2> textureCoords;
-	//std::vector<glm::vec3> boundingBox;
 
 	std::vector<glm::vec3*> vertexNRefs;
 	std::vector<glm::vec3> surfaceNormals;
