@@ -10,8 +10,7 @@
 #define PI  3.14159265
 #endif
 
-//Client program creates these and passes them to mesh.
-//Right when mesh finds one of these, it starts the update method.
+
 class Animation
 {
 public:
@@ -26,7 +25,7 @@ public:
 	//Pass in current center if moving to an absolute position.
 	void setStart(Mesh* mesh, glm::vec3& start);
 	//Enter final scale, rotation (degrees), or position
-	void setGoal(glm::vec3& goal, float duration, EasingType easing = LINEAR);
+	void setGoal(const glm::vec3& goal, float duration, EasingType easing = LINEAR);
 	//Calls the appropriate transformation function in the mesh.
 	void update(int time);
 

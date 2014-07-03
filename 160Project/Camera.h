@@ -14,20 +14,21 @@ class Camera
 public:
 	Camera(){};
 
-	Camera(CameraType cameraType, glm::mat4 projectionMatrix);
+	Camera(CameraType cameraType, const glm::mat4& projectionMatrix);
 
 	void lookAt(glm::vec3& point);
-	void translate(glm::vec3& offset);
-	void moveTo(glm::vec3& point);
+	void translate(const glm::vec3& offset);
+	void moveTo(const glm::vec3& point);
 	void scale(float zoomFactor);
-	void rotate(glm::vec3& rotation);
-	void rotateAbout(glm::vec3 rotation, glm::vec3 point);
+	void rotate(const glm::vec3& rotation);
+	void rotateAbout(const glm::vec3& rotation, const glm::vec3& point);
 	glm::mat4 getInverse(){return glm::inverse(mView);};
-	glm::vec3 windowToWorld(glm::vec3 winCoord, glm::vec4 viewPort);
+	glm::vec3 windowToWorld(const glm::vec3& winCoord, const glm::vec4& viewPort);
 
 	glm::vec3 getPosition(){return cameraPosition;}
 	glm::mat4 getModelView(){return mView;}
 	glm::mat4 getProjection(){return mProjection;}
+	void setProjection(const glm::mat4& projectionMatrix){ mProjection = projectionMatrix;}
 
 private:
 	glm::mat4 mView;

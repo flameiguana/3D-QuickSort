@@ -93,7 +93,7 @@ public:
 
 	//Checks if this polygon contains the specified point.
 	bool contains(glm::vec3* point){
-		for(int i = 0; i < vertices.size(); i++){
+		for(std::size_t i = 0; i < vertices.size(); i++){
 			if(comparevec3(*vertices.at(i), *point))
 				return true;
 		}
@@ -342,18 +342,18 @@ Mesh::Mesh(const char *coords, const char *polys, bool isTextured){
 }
 
 //This constructor takes a vector of glm::vec3 and generates vertex and polygon objects.
-Mesh::Mesh(std::vector<glm::vec3> &vertices){
+Mesh::Mesh(const std::vector<glm::vec3> &vertices){
 	setColorID();
 	smartPolys = false;
 
 	rawVerts = vertices;
-	for(int i = 0; i < vertices.size(); i++){
+	for(std::size_t i = 0; i < vertices.size(); i++){
 
 		if(i == 0){
 			maxCoords = vertices.front();
 			minCoords = vertices.front();
 		}
-
+		//Used for figuring out bounding box
 		if(vertices.at(i).x > maxCoords.x)
 			maxCoords.x = vertices.at(i).x;
 		if(vertices.at(i).x < minCoords.x)
@@ -596,9 +596,6 @@ void Mesh::loadTexture(const char *filename){
 	}
 }
 
-/*
-	Handles animations.
-*/
 void Mesh::draw(){
 	if(wireframe)
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -661,7 +658,7 @@ void Mesh::changeShading(ShadingType shading){
 
 //Method 1: Undo previous translation? This will require absolute coordinates.
 //Method 2: Just multiply with new translation matrix. Values will accumulate.
-void Mesh::translate(glm::vec3& offset){
+void Mesh::translate(const glm::vec3& offset){
 	//apply translation directly to current transfomation matrix
 	glm::mat4 translation(1.0f);
 	translation = glm::translate(translation, offset);
@@ -672,14 +669,14 @@ void Mesh::translate(glm::vec3& offset){
 
 
 //Move to an absolute coordinate on the map.
-void Mesh::moveTo(glm::vec3& point){
+void Mesh::moveTo(const glm::vec3& point){
 	//translate to center, then translate to point.
 	mTranslation = glm::translate(glm::mat4(1.0f), point);
 	mTransformation = mTranslation * mRotation * mScale *  glm::translate(glm::mat4(1.0f), -center);
 	currentCenter = point;
 }
 
-void Mesh::rotate(glm::vec3& rotations, bool positive){
+void Mesh::rotate(const glm::vec3& rotations, bool positive){
 	changedUniform = true;
 	//May have to translate to center.
 	glm::mat4 allAxes =  glm::mat4(1.0f);
@@ -706,7 +703,7 @@ void Mesh::translateOrigin(){
 
 //Accumulates rotation
 //Scale, translate to center, rotate new, rotate old, translate back to object origin, translate to original location
-void Mesh::rotateSelf(glm::vec3& rotations, bool positive){
+void Mesh::rotateSelf(const glm::vec3& rotations, bool positive){
 	glm::mat4 tempRotations = mRotation;
 	mRotation = glm::mat4(1.0f); //clear rotations
 	rotate(rotations, positive); //apply new rotations
@@ -716,7 +713,7 @@ void Mesh::rotateSelf(glm::vec3& rotations, bool positive){
 }
 
 //Rotates absolutely.
-void Mesh::rotateCenteredTo(glm::vec3& rotations, bool positive){
+void Mesh::rotateCenteredTo(const glm::vec3& rotations, bool positive){
 	glm::mat4 tempRotations = mRotation;
 	mRotation = glm::mat4(1.0f); //clear rotations
 	rotate(rotations, positive); //apply new rotations
@@ -745,7 +742,7 @@ void Mesh::scaleCenterUniform(float scaling){
 void Mesh::anchorBottom(){
 	center = glm::vec3(minCoords.x, minCoords.y, center.z);
 }
-void Mesh::scaleCenter(glm::vec3& scaleFactor){
+void Mesh::scaleCenter(const glm::vec3& scaleFactor){
 	glm::mat4 scale(1.0f);
 	scale = glm::scale(scale, scaleFactor);
 	mTransformation = mTranslation * glm::translate(glm::mat4(1.0f), center) * mRotation * scale * mScale * glm::translate(glm::mat4(1.0f), -center);

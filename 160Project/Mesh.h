@@ -35,7 +35,7 @@ class Mesh
 {
 public:
 	Mesh(const char *coords, const char* polys, bool isTextured = false);
-	Mesh(std::vector<glm::vec3> &vertices);
+	Mesh(const std::vector<glm::vec3> &vertices);
 	void calculateNormals();
 	std::vector<glm::vec3> getRawVertices(){return rawVerts;}
 	std::vector<glm::vec3> getVertexNormals(){return vertexNormals;}
@@ -47,21 +47,21 @@ public:
 	ShadingType getCurrentShading(){return currentShading;}
 	void setLighting(LightingType lighting);
 
-	void translate(glm::vec3& offset);
-	void rotateSelf(glm::vec3& offset, bool positive=true);
-	void rotateCenteredTo(glm::vec3& rotations, bool positive = true);
+	void translate(const glm::vec3& offset);
+	void rotateSelf(const glm::vec3& offset, bool positive=true);
+	void rotateCenteredTo(const glm::vec3& rotations, bool positive = true);
 	void translateOrigin();
 	void translateBack();
 
-	void moveTo(glm::vec3& point);
-	void rotate(glm::vec3& rotations, bool positive = true);
+	void moveTo(const glm::vec3& point);
+	void rotate(const glm::vec3& rotations, bool positive = true);
 	void scale(float scaling);
 	void zoom(float zoomFactor);
 	void moveCamera(glm::vec3& offset);
 //too specific of a function, but itll do.
 	void anchorBottom();
 	void scaleCenterUniform(float scaling);
-	void scaleCenter(glm::vec3& scaleFactor);
+	void scaleCenter(const glm::vec3& scaleFactor);
 	void drawBoundingBox(){drawBox = true;}
 	void removeBoundingBox(){drawBox = false;}
 	void setDiffuse(glm::vec4 materialDiffuse);

@@ -90,7 +90,7 @@ void update(int t)
 	}
 	visualization->update(time);
 	if(speed != oldSpeed){
-		visualization->scaleSpeed(speed);
+		visualization->scaleSpeed(static_cast<float>(speed));
 	}
 	glutPostRedisplay(); //tells glut we need to redraw, calls display function
 	glutTimerFunc(updateWaitPeriod, update, 0);
@@ -145,7 +145,7 @@ void mouseSelect(int button, int state, int x, int y){
 		glReadPixels(x, winHeight - y - 1, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
 		for(auto i = visualization->getObjects()->begin(); i < visualization->getObjects()->end(); i++){
 			if((*i)->colorMatch(color))
-				selected = *i;
+				selected = (*i).get();
 		}
 		if(selected != NULL){
 			//initalize "previous"
@@ -220,7 +220,7 @@ void activeMouse(int x, int y){
 		if(zoomMode == true){
 			float zoomFactor;
 			if(differenceY < 0.0f){
-				zoomFactor = .95;
+				zoomFactor = .95f;
 			}
 			else {
 				zoomFactor = 1.05f;
@@ -268,6 +268,7 @@ void activeMouse(int x, int y){
 
 void Terminate()
 { 
+	//Required to terminate antweakbar
 	TwTerminate();
 }
 
@@ -309,15 +310,12 @@ int main(int argc, char **argv)
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable (GL_TEXTURE_2D);
 	glewExperimental = GL_TRUE;
-	glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_CONTINUE_EXECUTION);
 	
-
 	//glutMouseFunc((GLUTmousebuttonfun)TwEventMouseButtonGLUT);
 	glutMotionFunc(activeMouse);
 	glutPassiveMotionFunc(passiveMouse);
 	glutSpecialFunc((GLUTspecialfun)TwEventSpecialGLUT);
 	glutKeyboardFunc(keyboard);
-	atexit(Terminate);
 	//TwGLUTModifiersFunc(glutGetModifiers);
 	glutReshapeFunc(reshape);
 	glewInit();
@@ -335,10 +333,11 @@ int main(int argc, char **argv)
 	*/
 	TwAddVarRW(bar, "Rate (%)", TW_TYPE_UINT32, &speed, " min=1 key='+' ");
 
-
+	
 	init();
-
+	glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_GLUTMAINLOOP_RETURNS);
 	glutMainLoop();
+	Terminate();
 	return 0;
 }
 

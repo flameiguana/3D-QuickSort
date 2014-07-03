@@ -7,10 +7,11 @@
 #include <stack>
 #include <list>
 #include <cmath>
+#include <memory>
 
 class QuickSortVisual{
 public:
-	QuickSortVisual(std::vector<int>& values, Camera* camera);
+	QuickSortVisual(const std::vector<int>& values, Camera* camera);
 	~QuickSortVisual();
 	void update(int time);
 	void draw();
@@ -21,10 +22,10 @@ public:
 		animationDuration = ANIMATION_UNIT  / (float)array.size() * animationScale;
 	}
 	void stepOnce(){stepMode = true;}
-	std::vector<Mesh*> * getObjects(){return &objects;}
+	std::vector<std::shared_ptr<Mesh>> * getObjects(){return &objects;}
 
 private:
-	std::vector<Mesh*> objects;
+	std::vector<std::shared_ptr<Mesh>> objects;
 	std::list<Animation> animations;
 	/* Algorithmn Variables */
 	std::vector<int> array;
@@ -35,11 +36,12 @@ private:
 
 	/*3D variables*/
 	Camera* camera;
-	Mesh* compareIndicator;
-	Mesh* indexIndicator;
-	Mesh* blank;
+	Mesh compareIndicator;
+	Mesh indexIndicator;
+	Mesh blank;
 	float boxWidth, height, yScale;
-	GLuint* vao;
+	
+	GLuint* vao; //pointer to array of vertex array objects
 	std::vector<GLuint> shaderPrograms;
 	int vaoIndex;
 

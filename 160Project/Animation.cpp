@@ -1,13 +1,14 @@
 #include "Animation.h" 
 
-Animation::Animation(AnimationType type):animationType(type), started(false), ended(false),hasLink(false){}
+Animation::Animation(AnimationType type)
+	:animationType(type), started(false), ended(false),hasLink(false){}
 
 
 void Animation::setStart(Mesh* mesh, glm::vec3& start){
 	this->mesh = mesh;
 	this->start = start;
 }
-void Animation::setGoal(glm::vec3& goal, float duration, EasingType easing){
+void Animation::setGoal(const glm::vec3& goal, float duration, EasingType easing){
 	this->goal = goal;
 	this->duration = duration;
 	changeInValue = goal - start;
@@ -19,6 +20,11 @@ glm::vec3 Animation::calculateStep(float t){
 	switch(easingType)
 	{
 		case LINEAR:
+			/*
+			linear interpolation is based on (y = mx + b)
+			y is the new position, m is change in value over duration, x is time, b is starting value
+			(1.0f - t) * start + t* goal;
+			*/
 			return changeInValue * (t/duration) + start;
 		case ELASTIC_OUT:
 			{//From Robert Penning's easing functions
@@ -35,12 +41,9 @@ glm::vec3 Animation::calculateStep(float t){
 			return changeInValue * (float) sin(t/duration * (PI/2.0f)) + start;
 		case NONE:
 			return goal;
+		default:
+			return goal;
 	}
-	//linear interpolation (y = mx + b)
-	/*
-	y is the new position, m is change in value over duration, x is time, b is starting value
-	*/
-	//return (1.0f - t) * start + t* goal;
 }
 
 //Implement these, decide whether to make calculations separately or not.
@@ -51,7 +54,7 @@ void Animation::update(int time){
 	}
 
 	//Tells us how far into the animation we should play
-	float difference = time - startTime;
+	float difference = static_cast<float>(time - startTime);
 	
 	if(difference >= duration){
 		ended = true;

@@ -12,7 +12,7 @@ void QuickSortVisual::makeObjects(float height){
 		float x = startingX + boxWidth*.5f +  margin*(i+1) + boxWidth*i;
 		//Allow custom objects?
 
-		Mesh* box = new Mesh("cube.coor", "cube.poly");
+		std::shared_ptr<Mesh> box (new Mesh("cube.coor", "cube.poly"));
 		box->calculateNormals();
 		box->createGLBuffer(false, vao, vaoIndex);
 		box->setupShader(shaderPrograms[i], camera);
@@ -33,15 +33,15 @@ void QuickSortVisual::moveCompareIndicator(int original, int destination,  bool 
 	std::cout << "Destination is " << destination << std::endl;
 
 	glm::vec3 goalPosition = objects.at(destination)->getCenter();
-	goalPosition.y +=  objects.at(destination)->getSize().y*.5f + boxWidth * .75;
+	goalPosition.y +=  objects.at(destination)->getSize().y*.5f + boxWidth * .75f;
 
 	if(!animated){
-		compareIndicator->moveTo(goalPosition);
+		compareIndicator.moveTo(goalPosition);
 		return;
 	}
 	Animation move(Animation::POSITION);
-	float travelTime = animationDuration* std::abs(original - destination);
-	move.setStart(compareIndicator, compareIndicator->getCenter());
+	float travelTime = animationDuration* std::abs(original - destination) * .33f;
+	move.setStart(&compareIndicator, compareIndicator.getCenter());
 	move.setGoal(goalPosition, travelTime, Animation::ELASTIC_OUT);
 	animations.push_back(move);
 }
@@ -56,17 +56,17 @@ void QuickSortVisual::moveIndexIndicator(int location, bool delay, bool animated
 	Animation move(Animation::POSITION);
 
 	if(!animated){
-		indexIndicator->moveTo(goalPosition);
+		indexIndicator.moveTo(goalPosition);
 		return;
 	}
 	//float travelTime = animationDuration* std::abs(a - b)*.75f;
-	move.setStart(indexIndicator, indexIndicator->getCenter());
+	move.setStart(&indexIndicator, indexIndicator.getCenter());
 	move.setGoal(goalPosition, animationDuration, Animation::QUAD_OUT);
 	if(delay){
 		///adds a blank animation to serve as a wait time. Simplest thing I could do in a pinch
 		Animation dummy(Animation::POSITION);
-		dummy.setStart(blank, blank->getCenter());
-		dummy.setGoal(blank->getCenter(), animationDuration, Animation::NONE);
+		dummy.setStart(&blank, blank.getCenter());
+		dummy.setGoal(blank.getCenter(), animationDuration, Animation::NONE);
 		move.chain(dummy);
 	}
 	animations.push_back(move);
@@ -75,8 +75,10 @@ void QuickSortVisual::moveIndexIndicator(int location, bool delay, bool animated
 //how many ms it takes to go across whole array
 const float QuickSortVisual::ANIMATION_UNIT = 3500;
 
-QuickSortVisual::QuickSortVisual(std::vector<int>& values, Camera* camera):camera(camera){
-	array = values;
+QuickSortVisual::QuickSortVisual(const std::vector<int>& values, Camera* camera):
+	array(values), camera(camera), compareIndicator("cube.coor", "cube.poly", true),
+	indexIndicator("cube.coor", "cube.poly"), blank("cube.coor", "cube.poly") {
+
 	animationScale = 1;
 	float elements = (float)values.size();
 	scaleSpeed(100);
@@ -110,26 +112,21 @@ QuickSortVisual::QuickSortVisual(std::vector<int>& values, Camera* camera):camer
 	makeObjects(height);
 	
 	GLuint texturedShader = Angel::InitShader("textured.vert", "textured.frag");
-	compareIndicator = new Mesh("cube.coor", "cube.poly", true);
-	compareIndicator->calculateNormals();
-	compareIndicator->createGLBuffer(false, vao, vaoIndex++);
-	compareIndicator->loadTexture("indicator.png");
-	compareIndicator->setupShader(texturedShader, camera);
-	compareIndicator->removeBoundingBox();
-	compareIndicator->scaleCenter(glm::vec3(boxWidth, boxWidth, boxWidth));
+	compareIndicator.calculateNormals();
+	compareIndicator.createGLBuffer(false, vao, vaoIndex++);
+	compareIndicator.loadTexture("indicator.png");
+	compareIndicator.setupShader(texturedShader, camera);
+	compareIndicator.removeBoundingBox();
+	compareIndicator.scaleCenter(glm::vec3(boxWidth, boxWidth, boxWidth));
 	
 	GLuint regularShader = Angel::InitShader("vshader.vert", "fshader.frag");
-	indexIndicator = new Mesh("cube.coor", "cube.poly");
-	indexIndicator->calculateNormals();
-	indexIndicator->createGLBuffer(false, vao, vaoIndex++);
-	indexIndicator->setupShader(regularShader, camera);
-	indexIndicator->removeBoundingBox();
-	indexIndicator->scaleCenter(glm::vec3(boxWidth, boxWidth/4.0f, boxWidth));
-	indexIndicator->setDiffuse(glm::vec4(105/255.0f, 7/255.0f, 159/255.0f, 1.0f));
+	indexIndicator.calculateNormals();
+	indexIndicator.createGLBuffer(false, vao, vaoIndex++);
+	indexIndicator.setupShader(regularShader, camera);
+	indexIndicator.removeBoundingBox();
+	indexIndicator.scaleCenter(glm::vec3(boxWidth, boxWidth/4.0f, boxWidth));
+	indexIndicator.setDiffuse(glm::vec4(105/255.0f, 7/255.0f, 159/255.0f, 1.0f));
 	
-	//Okay, no time to implement timer, so using this.
-	blank = new Mesh("cube.coor", "cube.poly");
-
 	moveCompareIndicator(0, 0, false);
 	moveIndexIndicator(0, false, false);
 	//Initialize quicksort algoritmn
@@ -142,7 +139,7 @@ void QuickSortVisual::swap(int a, int b){
 	int temp = array.at(a);
 	array.at(a) = array.at(b);
 	array.at(b) = temp;
-	Mesh* tempMesh = objects.at(a);
+	std::shared_ptr<Mesh> tempMesh = objects.at(a);
 	objects.at(a) = objects.at(b);
 	objects.at(b) = tempMesh;
 }
@@ -169,13 +166,13 @@ void QuickSortVisual::focus(int a, int b){
 		if(i >= a && i <= b){
 			//objects.at(i)->setAlpha(1.0f);
 			Animation changeAlpha(Animation::TRANSPARENCY);
-			changeAlpha.setStart(objects.at(i), glm::vec3(objects.at(i)->getAlpha()));
+			changeAlpha.setStart(objects.at(i).get(), glm::vec3(objects.at(i)->getAlpha()));
 			changeAlpha.setGoal(glm::vec3(1.0f), animationDuration*.75, Animation::LINEAR);
 			animations.push_back(changeAlpha);
 		}
 		else{
 			Animation changeAlpha(Animation::TRANSPARENCY);
-			changeAlpha.setStart(objects.at(i), glm::vec3(objects.at(i)->getAlpha()));
+			changeAlpha.setStart(objects.at(i).get(), glm::vec3(objects.at(i)->getAlpha()));
 			changeAlpha.setGoal(glm::vec3(.4f), animationDuration*.75, Animation::LINEAR);
 			animations.push_back(changeAlpha);
 			//objects.at(i)->setAlpha(.5f);
@@ -190,8 +187,8 @@ void QuickSortVisual::focus(int a, int b){
 */
 void QuickSortVisual::swapAnimation(int a, int b){
 
-	Mesh* meshA = objects.at(a);
-	Mesh* meshB = objects.at(b);
+	Mesh* meshA = objects.at(a).get();
+	Mesh* meshB = objects.at(b).get();
 	float displacementA = meshA->getSize().y*.5f;
 	float displacementB = meshB->getSize().y*.5f;
 
@@ -411,8 +408,8 @@ void QuickSortVisual::update(int realTime){
 }
 //Draw the actual meshes.
 void QuickSortVisual::draw(){
-	compareIndicator->draw();
-	indexIndicator->draw();
+	compareIndicator.draw();
+	indexIndicator.draw();
 	for(auto i = objects.begin(); i < objects.end(); i++){
 		(*i)->draw();
 	}

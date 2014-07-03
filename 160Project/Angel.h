@@ -60,7 +60,7 @@ GLuint InitShader( const char* vertexShaderFile,
 const GLfloat  DivideByZeroTolerance = GLfloat(1.0e-07);
 
 //  Degrees-to-radians constant 
-const GLfloat  DegreesToRadians = M_PI / 180.0;
+const GLfloat  DegreesToRadians = static_cast<GLfloat>(M_PI / 180.0);
 
 }  // namespace Angel
 

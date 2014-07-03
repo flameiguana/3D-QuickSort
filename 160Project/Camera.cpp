@@ -1,7 +1,7 @@
 
 #include "Camera.h"
 
-Camera::Camera(CameraType cameraType, glm::mat4 projectionMatrix)
+Camera::Camera(CameraType cameraType, const glm::mat4& projectionMatrix)
 	:cameraType(cameraType), mProjection(projectionMatrix){
 	cameraPosition = glm::vec3(0.0f, 0.0f, 1.0f);
 	cameraAt = glm::vec3(0.0f, 0.0f, 0.0f); //Look at origin
@@ -17,10 +17,8 @@ void Camera::scale(float zoomFactor){
 	mScaleProjection = scale * mScaleProjection;
 }
 
-void Camera::translate(glm::vec3& offset){
+void Camera::translate(const glm::vec3& offset){
 	glm::mat4 translation(1.0f);
-	//want to zoom in by moving everything negative z
-	//offset = -offset;
 	translation = glm::translate(translation, offset);
 	mView = translation * mView;
 	//get object coorinates of camera.
@@ -29,13 +27,13 @@ void Camera::translate(glm::vec3& offset){
 }
 
 //Camera will be rotated to look at current look at point.
-void Camera::moveTo(glm::vec3& point){
+void Camera::moveTo(const glm::vec3& point){
 	cameraPosition = point;
 	mView = glm::lookAt(cameraPosition, cameraAt, cameraUp);
 }
 
 //Only rotates position, 
-void Camera::rotate(glm::vec3& rotations){
+void Camera::rotate(const glm::vec3& rotations){
 	glm::mat4 allAxes =  glm::mat4(1.0f);
 	float one = 1.0f;
 	if(rotations.x != 0.0f) 
@@ -51,7 +49,7 @@ void Camera::rotate(glm::vec3& rotations){
 }
 
 //move to distance of object from center, rotate, move back
-void Camera::rotateAbout(glm::vec3 rotations, glm::vec3 point){
+void Camera::rotateAbout(const glm::vec3& rotations, const glm::vec3& point){
 
 	glm::mat4 mRotation(1.0f); //clear rotations
 	if(rotations.x != 0.0f) 
@@ -60,8 +58,6 @@ void Camera::rotateAbout(glm::vec3 rotations, glm::vec3 point){
 		mRotation = glm::rotate(mRotation, rotations.y, glm::vec3(0.0f, 1.0f, 0.0f));
 	if(rotations.z != 0.0f)
 		mRotation = glm::rotate(mRotation, rotations.z, glm::vec3(0.0f, 0.0f, 1.0f));
-	glm::vec3 originalPos = cameraPosition;
-	point.y = 0.0f;
 	cameraPosition =  glm::vec3(glm::translate(glm::mat4(1.0f), point) * mRotation * glm::translate(glm::mat4(1.0f), -point) * glm::vec4(cameraPosition, 1.0f));
 }
 
@@ -72,6 +68,6 @@ void Camera::lookAt(glm::vec3& point){
 	mView = glm::lookAt(cameraPosition, cameraAt, cameraUp);
 }
 
-glm::vec3 Camera::windowToWorld(glm::vec3 winCoord, glm::vec4 viewPort){
+glm::vec3 Camera::windowToWorld(const glm::vec3& winCoord, const glm::vec4& viewPort){
 	return glm::unProject(winCoord, mView, mProjection, viewPort);
 }
