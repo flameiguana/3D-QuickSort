@@ -69,7 +69,7 @@ void Animation::update(int time){
 			mesh->translate(calculateStep(difference));
 			break;
 		case ROTATE:
-			mesh->rotateCenteredTo(calculateStep(difference));
+			mesh->setRotation(calculateStep(difference));
 			break;
 		case SCALE:
 			mesh->scaleCenter(calculateStep(difference));

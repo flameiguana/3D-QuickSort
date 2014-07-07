@@ -8,7 +8,7 @@ void QuickSortVisual::makeObjects(float height){
 	float margin = boxWidth/2.0f;
 	//get max value
 
-	for(int i = 0; i < array.size(); i++){
+	for(std::size_t i = 0; i < array.size(); i++){
 		float x = startingX + boxWidth*.5f +  margin*(i+1) + boxWidth*i;
 		//Allow custom objects?
 
@@ -32,7 +32,7 @@ void QuickSortVisual::moveCompareIndicator(int original, int destination,  bool 
 {
 	std::cout << "Destination is " << destination << std::endl;
 
-	glm::vec3 goalPosition = objects.at(destination)->getCenter();
+	glm::vec3 goalPosition = objects.at(destination)->getPosition();
 	goalPosition.y +=  objects.at(destination)->getSize().y*.5f + boxWidth * .75f;
 
 	if(!animated){
@@ -41,7 +41,7 @@ void QuickSortVisual::moveCompareIndicator(int original, int destination,  bool 
 	}
 	Animation move(Animation::POSITION);
 	float travelTime = animationDuration* std::abs(original - destination) * .33f;
-	move.setStart(&compareIndicator, compareIndicator.getCenter());
+	move.setStart(&compareIndicator, compareIndicator.getPosition());
 	move.setGoal(goalPosition, travelTime, Animation::ELASTIC_OUT);
 	animations.push_back(move);
 }
@@ -49,7 +49,7 @@ void QuickSortVisual::moveCompareIndicator(int original, int destination,  bool 
 //Creates an animation that moves bottom block to indicate where our array index is pointing at.
 void QuickSortVisual::moveIndexIndicator(int location, bool delay, bool animated){
 
-	glm::vec3 goalPosition = objects.at(location)->getCenter();
+	glm::vec3 goalPosition = objects.at(location)->getPosition();
 	goalPosition.z +=  boxWidth;
 	goalPosition.y = -.5f;
 
@@ -60,13 +60,13 @@ void QuickSortVisual::moveIndexIndicator(int location, bool delay, bool animated
 		return;
 	}
 	//float travelTime = animationDuration* std::abs(a - b)*.75f;
-	move.setStart(&indexIndicator, indexIndicator.getCenter());
+	move.setStart(&indexIndicator, indexIndicator.getPosition());
 	move.setGoal(goalPosition, animationDuration, Animation::QUAD_OUT);
 	if(delay){
 		///adds a blank animation to serve as a wait time. Simplest thing I could do in a pinch
 		Animation dummy(Animation::POSITION);
-		dummy.setStart(&blank, blank.getCenter());
-		dummy.setGoal(blank.getCenter(), animationDuration, Animation::NONE);
+		dummy.setStart(&blank, blank.getPosition());
+		dummy.setGoal(blank.getPosition(), animationDuration, Animation::NONE);
 		move.chain(dummy);
 	}
 	animations.push_back(move);
@@ -162,18 +162,18 @@ void QuickSortVisual::markPivot(int i){
 //and when the sorted, push them back in, replacing the unsorted ones. 
 void QuickSortVisual::focus(int a, int b){
 
-	for(int i = 0; i < objects.size(); i++){
+	for(std::size_t i = 0; i < objects.size(); i++){
 		if(i >= a && i <= b){
 			//objects.at(i)->setAlpha(1.0f);
 			Animation changeAlpha(Animation::TRANSPARENCY);
 			changeAlpha.setStart(objects.at(i).get(), glm::vec3(objects.at(i)->getAlpha()));
-			changeAlpha.setGoal(glm::vec3(1.0f), animationDuration*.75, Animation::LINEAR);
+			changeAlpha.setGoal(glm::vec3(1.0f), animationDuration*.75f, Animation::LINEAR);
 			animations.push_back(changeAlpha);
 		}
 		else{
 			Animation changeAlpha(Animation::TRANSPARENCY);
 			changeAlpha.setStart(objects.at(i).get(), glm::vec3(objects.at(i)->getAlpha()));
-			changeAlpha.setGoal(glm::vec3(.4f), animationDuration*.75, Animation::LINEAR);
+			changeAlpha.setGoal(glm::vec3(.4f), animationDuration*.75f, Animation::LINEAR);
 			animations.push_back(changeAlpha);
 			//objects.at(i)->setAlpha(.5f);
 		}
@@ -192,8 +192,8 @@ void QuickSortVisual::swapAnimation(int a, int b){
 	float displacementA = meshA->getSize().y*.5f;
 	float displacementB = meshB->getSize().y*.5f;
 
-	glm::vec3 aPosition = objects.at(a)->getCenter();
-	glm::vec3 bPosition = objects.at(b)->getCenter();
+	glm::vec3 aPosition = objects.at(a)->getPosition();
+	glm::vec3 bPosition = objects.at(b)->getPosition();
 	float z = aPosition.z;
 	//Movement time depends on how far things are.
 	float travelTime = animationDuration* std::abs(a - b);

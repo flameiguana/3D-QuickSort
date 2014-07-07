@@ -48,14 +48,11 @@ public:
 	void setLighting(LightingType lighting);
 
 	void translate(const glm::vec3& offset);
-	void rotateSelf(const glm::vec3& offset, bool positive=true);
-	void rotateCenteredTo(const glm::vec3& rotations, bool positive = true);
-	void translateOrigin();
-	void translateBack();
+	void rotate(const glm::vec3& offset, bool clockwise=true);
+	void setRotation(const glm::vec3& rotations, bool clockwise = true);
 
 	void moveTo(const glm::vec3& point);
-	void rotate(const glm::vec3& rotations, bool positive = true);
-	void scale(float scaling);
+
 	void zoom(float zoomFactor);
 	void moveCamera(glm::vec3& offset);
 //too specific of a function, but itll do.
@@ -74,7 +71,7 @@ public:
 	void loadTexture(const char *filename);
 
 	glm::vec4 getSize(){return size;}
-	glm::vec3 getCenter(){return currentCenter;}
+	glm::vec3 getPosition(){return position;}
 	void setWireframe(bool value){wireframe = value;}
 	void draw();
 	~Mesh();
@@ -112,9 +109,8 @@ private:
 	class Polygon;
 	class BBox;
 	bool drawBox;
-	//Tells us to reload uniform variables.
-	bool changedUniform;
 	bool isTextured;
+
 
 	/*Colors*/
 	glm::vec4 materialDiffuse;
@@ -124,16 +120,17 @@ private:
 	glm::vec4 materialSpecular;
 	float shininess, alpha;
 
+	glm::mat4 calculateRotationMatrix(const glm::vec3& rotations, bool clockwise = true);
 	glm::mat4 mTranslation;
 	glm::mat4 mRotation;
 	glm::mat4 mScale;
 	glm::vec3 maxCoords;
 	glm::vec3 minCoords;
 	glm::vec4 size;
-	glm::vec3 center;
-	//Animation* animation;
+	glm::vec3 center; //point in mesh around which transformations are applied
 	//specifies center of display of the mesh (may differ from actual coordinates in vertices array)
-	glm::vec3 currentCenter;
+	glm::vec3 position;
+	glm::vec3 rotation;
 	BBox* boundingBox;
 
 	void setColorID();

@@ -250,14 +250,14 @@ void activeMouse(int x, int y){
 					if(differenceX < 0.0f){
 						positive = false;
 					}
-						selected->rotateSelf(glm::vec3(0.0f, rotation, 0.0f), positive);
+						selected->rotate(glm::vec3(0.0f, rotation, 0.0f), positive);
 					break;
 				case ROTATE_H:
 					rotation = ROTATION_FACTOR;
 					if(differenceY < 0.0f){
 						positive = false;
 					}
-						selected->rotateSelf(glm::vec3(rotation, 0.0f, 0.0f), positive);
+						selected->rotate(glm::vec3(rotation, 0.0f, 0.0f), positive);
 					break;
 			}
 		}

@@ -250,7 +250,7 @@ Mesh::Mesh(const char *coords, const char *polys, bool isTextured){
 	size = glm::vec4(maxCoords.x - minCoords.x, maxCoords.y - minCoords.y, maxCoords.z - minCoords.z, 1.0f);
 	center = glm::vec3((minCoords.x + maxCoords.x)/2.0f, (minCoords.y + maxCoords.y)/2.0f, (minCoords.z + maxCoords.z)/2.0f);
 	//std::cout << "Center of figure "<< center.x << " " << center.y << " " << center.z << std::endl;
-	currentCenter = center;
+	position = center;
 	file.close();
 	//Load the polygons
 	file.open(polys);
@@ -381,7 +381,7 @@ Mesh::Mesh(const std::vector<glm::vec3> &vertices){
 	center = glm::vec3((minCoords.x + maxCoords.x)/2.0f, (minCoords.y + maxCoords.y)/2.0f, (minCoords.z + maxCoords.z)/2.0f);
 	//center = size/2.0f;
 	std::cout << "Center of terrain "<< center.x << " " << center.y << " " << center.z << std::endl;
-	currentCenter = center;
+	position = center;
 	
 }
 
@@ -656,15 +656,8 @@ void Mesh::changeShading(ShadingType shading){
 }
 
 
-//Method 1: Undo previous translation? This will require absolute coordinates.
-//Method 2: Just multiply with new translation matrix. Values will accumulate.
 void Mesh::translate(const glm::vec3& offset){
-	//apply translation directly to current transfomation matrix
-	glm::mat4 translation(1.0f);
-	translation = glm::translate(translation, offset);
-	mTranslation = translation * mTranslation;
-	mTransformation = translation * mTransformation;
-	currentCenter = glm::vec3(translation * glm::vec4(currentCenter, 1.0f));
+	moveTo(position + offset);
 }
 
 
@@ -673,15 +666,13 @@ void Mesh::moveTo(const glm::vec3& point){
 	//translate to center, then translate to point.
 	mTranslation = glm::translate(glm::mat4(1.0f), point);
 	mTransformation = mTranslation * mRotation * mScale *  glm::translate(glm::mat4(1.0f), -center);
-	currentCenter = point;
+	position = point;
 }
 
-void Mesh::rotate(const glm::vec3& rotations, bool positive){
-	changedUniform = true;
-	//May have to translate to center.
+glm::mat4 Mesh::calculateRotationMatrix(const glm::vec3& rotations, bool clockwise){
 	glm::mat4 allAxes =  glm::mat4(1.0f);
 	float one = 1.0f;
-	if(!positive)
+	if(!clockwise)
 		one = -1.0f;
 	if(rotations.x != 0.0f) 
 		allAxes = glm::rotate(allAxes, rotations.x, glm::vec3(one, 0.0f, 0.0f));
@@ -689,54 +680,34 @@ void Mesh::rotate(const glm::vec3& rotations, bool positive){
 		allAxes = glm::rotate(allAxes, rotations.y, glm::vec3(0.0f, one, 0.0f));
 	if(rotations.z != 0.0f)
 		allAxes = glm::rotate(allAxes, rotations.z, glm::vec3(0.0f, 0.0f, one));
-		mRotation = allAxes * mRotation;
-		mTransformation = mRotation * mTransformation;
+	
+	return allAxes;
 }
 
-void Mesh::translateOrigin(){
-	mTransformation = mRotation * mScale;
-}
-
- void Mesh::translateBack(){
-	mTransformation = mTranslation * mRotation * mScale;
-}
 
 //Accumulates rotation
-//Scale, translate to center, rotate new, rotate old, translate back to object origin, translate to original location
-void Mesh::rotateSelf(const glm::vec3& rotations, bool positive){
-	glm::mat4 tempRotations = mRotation;
-	mRotation = glm::mat4(1.0f); //clear rotations
-	rotate(rotations, positive); //apply new rotations
-	mTransformation =  mTranslation * glm::translate(glm::mat4(1.0f), center) * tempRotations
-	 * mRotation *  mScale * glm::translate(glm::mat4(1.0f), -center);
-	mRotation = tempRotations * mRotation; //restore rotation. this accumulates.
+void Mesh::rotate(const glm::vec3& rotations, bool clockwise){
+	//apply old rotations to new rotations (doing it the other way around would make rotation axes non local)
+	mRotation = mRotation *  calculateRotationMatrix(rotations, clockwise);
+	 //apply new rotations
+	mTransformation =  mTranslation * glm::translate(glm::mat4(1.0f), center) * mRotation *  mScale * glm::translate(glm::mat4(1.0f), -center);
+	rotation = glm::vec3(mRotation * glm::vec4(rotation, 1.0f));
 }
 
 //Rotates absolutely.
-void Mesh::rotateCenteredTo(const glm::vec3& rotations, bool positive){
-	glm::mat4 tempRotations = mRotation;
-	mRotation = glm::mat4(1.0f); //clear rotations
-	rotate(rotations, positive); //apply new rotations
-	mTransformation =  mTranslation * glm::translate(glm::mat4(1.0f), center) * tempRotations
-	 * mRotation *  mScale * glm::translate(glm::mat4(1.0f), -center);
-	mRotation = tempRotations;
-}
-
-//only allow uniform scaling for now
-void Mesh::scale(float scaling){
-	glm::mat4 scale(1.0f);
-	scale = glm::scale(scale, glm::vec3(scaling, scaling, scaling));
-	mTransformation = scale * mTransformation;
-	mScale = scale * mScale;
-	size = mScale * size;
+void Mesh::setRotation(const glm::vec3& rotations, bool clockwise){
+	mRotation = calculateRotationMatrix(rotations, clockwise);
+	mTransformation =  mTranslation * glm::translate(glm::mat4(1.0f), center) * mRotation *  mScale * glm::translate(glm::mat4(1.0f), -center);
+	rotation = rotations;
 }
 
 
 void Mesh::scaleCenterUniform(float scaling){
 	glm::mat4 scale(1.0f);
 	scale = glm::scale(scale, glm::vec3(scaling, scaling, scaling));
-	mTransformation = mTranslation * glm::translate(glm::mat4(1.0f), center) * mRotation * scale * mScale * glm::translate(glm::mat4(1.0f), -center);
 	mScale = scale * mScale;
+	mTransformation = mTranslation * glm::translate(glm::mat4(1.0f), center) * mRotation * mScale * glm::translate(glm::mat4(1.0f), -center);
+	size = mScale * size;
 }
 
 void Mesh::anchorBottom(){
@@ -745,8 +716,8 @@ void Mesh::anchorBottom(){
 void Mesh::scaleCenter(const glm::vec3& scaleFactor){
 	glm::mat4 scale(1.0f);
 	scale = glm::scale(scale, scaleFactor);
-	mTransformation = mTranslation * glm::translate(glm::mat4(1.0f), center) * mRotation * scale * mScale * glm::translate(glm::mat4(1.0f), -center);
 	mScale = scale * mScale;
+	mTransformation = mTranslation * glm::translate(glm::mat4(1.0f), center) * mRotation * mScale * glm::translate(glm::mat4(1.0f), -center);
 	size = mScale * size;
 }
 
